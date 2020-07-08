@@ -65,7 +65,7 @@ contract CommunityStakingIncentives {
   function claimReward(address stakedContract, address sponsor, address tokenAddress) public returns (uint rewardAmount) {
     uint currentRound = (now - startTime) / roundDuration + 1;
     uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
-    require(currentRound > lastRoundClaimed, "Already claimed for this round");
+    require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
@@ -143,12 +143,17 @@ contract CommunityStakingIncentives {
     emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
   }
 
-  function getAvailableRewards(
+  function getAvailableStakerRewards(
     address staker,
     address stakedContract,
     address sponsor,
     address tokenAddress
   ) external view returns (uint rewardAmount) {
+    uint currentRound = (now - startTime) / roundDuration + 1;
+    uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
+    if (lastRoundClaimed >= currentRound) {
+      return 0;
+    }
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
@@ -157,5 +162,13 @@ contract CommunityStakingIncentives {
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
     }
+  }
+
+  function getRewardAmount(
+    address stakedContract,
+    address sponsor,
+    address tokenAddress
+  ) external view returns (uint rewardAmount) {
+    return stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
   }
 }

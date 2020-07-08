@@ -14,7 +14,7 @@ describe('depositRewards', function () {
 
   beforeEach(setup);
 
-  it('should deposit rewards for a token', async function () {
+  it('should update the reward funds of a sponsor and emit RewardDeposit event', async function () {
     const { incentives, mockTokenA } = this;
 
     await mockTokenA.issue(sponsor1, 1e20.toString());
@@ -24,8 +24,18 @@ describe('depositRewards', function () {
     await mockTokenA.approve(incentives.address, totalRewards, {
       from: sponsor1,
     });
-    await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
+    const tx = await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
       from: sponsor1,
     });
+
+    await expectEvent(tx, 'RewardDeposit', {
+      stakedContract: firstContract,
+      sponsor: sponsor1,
+      tokenAddress: mockTokenA.address,
+      amount: totalRewards,
+    });
+
+    const storedAmount = await incentives.getRewardAmount(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(storedAmount.toString(), totalRewards);
   });
 });
