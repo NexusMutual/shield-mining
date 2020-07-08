@@ -15,5 +15,5 @@ module.exports = {
     // The default is TRUE
     // If you need to debug the tx in tenderly, change this to FALSE, otherwise leave set to TRUE.
     vmErrorsOnRPCResponse: true,
-  }
+  },
 };

@@ -9,7 +9,7 @@ const secondContract = '0x0000000000000000000000000000000000000002';
 describe('depositRewards', function () {
 
   const [
-    sponsor1
+    sponsor1,
   ] = accounts;
 
   beforeEach(setup);
@@ -22,10 +22,10 @@ describe('depositRewards', function () {
     const totalRewards = 1e18.toString();
 
     await mockTokenA.approve(incentives.address, totalRewards, {
-      from: sponsor1
+      from: sponsor1,
     });
     await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
-      from: sponsor1
+      from: sponsor1,
     });
   });
 });
