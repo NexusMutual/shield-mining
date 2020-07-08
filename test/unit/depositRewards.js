@@ -13,7 +13,7 @@ describe('depositRewards', function () {
     sponsor2,
     sponsor3,
     sponsor4,
-    sponsor5
+    sponsor5,
   ] = accounts;
 
   beforeEach(setup);
@@ -70,5 +70,22 @@ describe('depositRewards', function () {
       const storedAmount = await incentives.getRewardAmount(firstContract, sponsor, mockTokenA.address);
       assert.equal(storedAmount.toString(), sponsorRewards);
     }
-  })
+
+    // TODO: remove this; only for demo purposes
+
+    // fetch
+
+    let staker;
+    // let contracts = await ps.stakerContractsArray(staker);
+    contacts = [firstContract];
+
+    const pastEvents = await incentives.getPastEvents('RewardDeposit', {
+      fromBlock: 0,
+      filter: {
+        stakedContract: contracts,
+      }
+    });
+    console.log(`${pastEvents.length} events detected.`);
+    console.log(pastEvents);
+  });
 });

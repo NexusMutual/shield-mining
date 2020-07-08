@@ -1,3 +1,20 @@
+/*
+    Copyright (C) 2020 NexusMutual.io
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see http://www.gnu.org/licenses/
+*/
+
 pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -12,9 +29,9 @@ contract CommunityStakingIncentives {
   uint public roundDuration;
   uint public startTime;
 
-  constructor(uint roundDuration, uint startTime, address masterAddress) public {
-    roundDuration = roundDuration;
-    startTime = startTime;
+  constructor(uint _roundDuration, uint _startTime, address masterAddress) public {
+    roundDuration = _roundDuration;
+    startTime = _startTime;
     master = INXMMaster(masterAddress);
   }
 
@@ -160,8 +177,7 @@ contract CommunityStakingIncentives {
     }
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
-    rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
-      .mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate);
+    rewardAmount = stake.mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate);
     uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
