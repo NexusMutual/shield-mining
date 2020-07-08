@@ -24,10 +24,11 @@ contract CommunityStakingIncentives {
 
   struct StakingRewardPool {
     address stakedContract;
-    // risk -> ( ERC20 token address -> amount)
+    // ERC20 token address => Reward
     mapping (address => Reward) rewards;
   }
 
+  // stakedContractAddress => sponsorAddress => riskRewardPool
   mapping (address => mapping (address => StakingRewardPool)) stakingRewardPools;
 
   event RewardDeposit (
@@ -139,5 +140,21 @@ contract CommunityStakingIncentives {
     erc20.transfer(msg.sender, amount);
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount -= amount;
     emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
+  }
+
+  function getAvailableRewards(
+    address staker,
+    address stakedContract,
+    address sponsor,
+    address tokenAddress
+  ) external view returns (uint rewardAmount) {
+    IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
+    uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
+    rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
+    * stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate;
+    uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
+    if (rewardAmount > rewardsAvailable) {
+      rewardAmount = rewardsAvailable;
+    }
   }
 }
