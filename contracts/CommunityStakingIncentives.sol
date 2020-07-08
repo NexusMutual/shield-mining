@@ -71,7 +71,7 @@ contract CommunityStakingIncentives {
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
-      * stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate;
+      .mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate);
     uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
@@ -161,7 +161,7 @@ contract CommunityStakingIncentives {
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
-    * stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate;
+      .mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate);
     uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
