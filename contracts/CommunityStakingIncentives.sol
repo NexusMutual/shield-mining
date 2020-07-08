@@ -107,14 +107,20 @@ contract CommunityStakingIncentives {
   /**
   * @dev Calls claimReward for each separate (risk, sponsor, token) tuple specified
   */
-  function claimRewards(address[] calldata riskContracts,  address[] calldata sponsors, address[] calldata tokenAddresses) external returns (uint nxmRewarded) {
+  function claimRewards(
+    address[] calldata riskContracts,
+    address[] calldata sponsors,
+    address[] calldata tokenAddresses
+  ) external returns (uint[] memory tokensRewarded) {
+
     require(riskContracts.length == sponsors.length, "riskContracts.length != sponsors.length");
     require(riskContracts.length == tokenAddresses.length, "riskContracts.length != tokenAddresses.length");
-    uint totalNXMRewarded = 0;
+
+    tokensRewarded = new uint[](riskContracts.length);
     for (uint i = 0; i < riskContracts.length; i++) {
-      totalNXMRewarded += claimReward(riskContracts[i], sponsors[i], tokenAddresses[i]);
+      tokensRewarded[i] = claimReward(riskContracts[i], sponsors[i], tokenAddresses[i]);
     }
-    return totalNXMRewarded;
+    return tokensRewarded;
   }
 
   /**
