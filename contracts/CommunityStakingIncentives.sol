@@ -2,16 +2,18 @@ pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IPooledStaking.sol";
+import "./interfaces/INXMMaster.sol";
 
 contract CommunityStakingIncentives {
 
-  IPooledStaking public pooledStaking;
+  INXMMaster public master;
   uint public roundDuration;
   uint public startTime;
 
-  constructor(uint roundDuration, uint startTime) public {
+  constructor(uint roundDuration, uint startTime, address masterAddress) public {
     roundDuration = roundDuration;
     startTime = startTime;
+    master = INXMMaster(masterAddress);
   }
 
   struct Reward {
@@ -47,7 +49,8 @@ contract CommunityStakingIncentives {
     address sponsor,
     address tokenAddress,
     uint amount,
-    address receiver
+    address receiver,
+    uint roundNumber
   );
 
   /**
@@ -63,21 +66,21 @@ contract CommunityStakingIncentives {
     uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed for this round");
 
+    IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
       * stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate;
-
     uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
-
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
     }
+    require(rewardAmount > 0, "rewardAmount needs to be greater than 0");
 
     stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender] = currentRound;
     stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount -= rewardAmount;
 
     IERC20 erc20 = IERC20(tokenAddress);
     erc20.transfer(msg.sender, rewardAmount);
-    emit RewardClaim(stakedContract, sponsor, tokenAddress, rewardAmount, msg.sender);
+    emit RewardClaim(stakedContract, sponsor, tokenAddress, rewardAmount, msg.sender, currentRound);
   }
 
   /**
