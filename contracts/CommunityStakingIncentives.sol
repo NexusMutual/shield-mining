@@ -50,12 +50,19 @@ contract CommunityStakingIncentives {
     address receiver
   );
 
-  function claimReward(address riskContract, address sponsor, address tokenAddress) public returns (uint nxmRewarded) {
+  /**
+  * @dev Claims reward as a NexusMutual staker.
+  * @param riskContract contract the staker has a stake on.
+  * @param sponsor Sponsor providing the reward funds.
+  * @param tokenAddress address of the ERC20 token of the reward funds.
+  * @return rewardAmount amount rewarded
+  */
+  function claimReward(address riskContract, address sponsor, address tokenAddress) public returns (uint rewardAmount) {
     uint currentRound = (now - startTime) / roundLength + 1;
     uint lastRoundClaimed = riskRewardPools[riskContract][sponsor].bonusRewards[tokenAddress].lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed for this round");
 
-    uint rewardAmount = pooledStaking.stakerContractStake(msg.sender, riskContract)
+    rewardAmount = pooledStaking.stakerContractStake(msg.sender, riskContract)
       * riskRewardPools[riskContract][sponsor].bonusRewards[tokenAddress].rewardRate;
 
     uint rewardsAvailable = riskRewardPools[riskContract][sponsor].bonusRewards[tokenAddress].amount;
@@ -72,11 +79,23 @@ contract CommunityStakingIncentives {
     emit RewardClaim(riskContract, sponsor, tokenAddress, rewardAmount, msg.sender);
   }
 
+  /**
+  * @dev set the reward ratio as a sponsor for a particular contract and ERC20 token.
+  * @param riskContract Contract the staker has a stake on.
+  * @param tokenAddress Address of the ERC20 token of the reward funds.
+  * @param rate Rate between the NXM stake and the reward amount.
+  */
   function setRatio(address riskContract, address tokenAddress, uint rate) external {
     require(rate != 0, "Rate is 0");
     riskRewardPools[riskContract][msg.sender].bonusRewards[tokenAddress].rewardRate = rate;
   }
 
+  /**
+  * @dev Add rewards as a sponsor for a particular contract.
+  * @param riskContract Contract the staker has a stake on.
+  * @param tokenAddress Address of the ERC20 token of the reward funds.
+  * @param amount Amount of rewards to be deposited.
+  */
   function depositRewards(address riskContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
 
@@ -85,6 +104,9 @@ contract CommunityStakingIncentives {
     emit RewardDeposit(riskContract, msg.sender, tokenAddress, amount);
   }
 
+  /**
+  * @dev Calls claimReward for each separate (risk, sponsor, token) tuple specified
+  */
   function claimRewards(address[] calldata riskContracts,  address[] calldata sponsors, address[] calldata tokenAddresses) external returns (uint nxmRewarded) {
     require(riskContracts.length == sponsors.length, "riskContracts.length != sponsors.length");
     require(riskContracts.length == tokenAddresses.length, "riskContracts.length != tokenAddresses.length");
@@ -95,6 +117,12 @@ contract CommunityStakingIncentives {
     return totalNXMRewarded;
   }
 
+  /**
+  * @dev Retract reward funds as a Sponsor for a particular risk.
+  * @param riskContract Contract the staker has a stake on.
+  * @param tokenAddress Address of the ERC20 token of the reward funds.
+  * @param amount Amount of reward funds to be retracted.
+  */
   function retractRewards(address riskContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
 
