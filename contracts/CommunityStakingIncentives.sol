@@ -52,7 +52,8 @@ contract CommunityStakingIncentives {
 
   /**
   * @dev Claims reward as a NexusMutual staker.
-  * @param riskContract contract the staker has a stake on.
+  * @param stakedContract contract the staker has a stake on.
+  * @param stakedContract contract the staker has a stake on.
   * @param sponsor Sponsor providing the reward funds.
   * @param tokenAddress address of the ERC20 token of the reward funds.
   * @return rewardAmount amount rewarded
@@ -81,7 +82,7 @@ contract CommunityStakingIncentives {
 
   /**
   * @dev set the reward ratio as a sponsor for a particular contract and ERC20 token.
-  * @param riskContract Contract the staker has a stake on.
+  * @param stakedContract Contract the staker has a stake on.
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param rate Rate between the NXM stake and the reward amount.
   */
@@ -92,7 +93,7 @@ contract CommunityStakingIncentives {
 
   /**
   * @dev Add rewards as a sponsor for a particular contract.
-  * @param riskContract Contract the staker has a stake on.
+  * @param stakedContract Contract the staker has a stake on.
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param amount Amount of rewards to be deposited.
   */
@@ -113,8 +114,8 @@ contract CommunityStakingIncentives {
     address[] calldata tokenAddresses
   ) external returns (uint[] memory tokensRewarded) {
 
-    require(stakedContracts.length == sponsors.length, "riskContracts.length != sponsors.length");
-    require(stakedContracts.length == tokenAddresses.length, "riskContracts.length != tokenAddresses.length");
+    require(stakedContracts.length == sponsors.length, "stakedContracts.length != sponsors.length");
+    require(stakedContracts.length == tokenAddresses.length, "stakedContracts.length != tokenAddresses.length");
 
     tokensRewarded = new uint[](stakedContracts.length);
     for (uint i = 0; i < stakedContracts.length; i++) {
@@ -125,7 +126,7 @@ contract CommunityStakingIncentives {
 
   /**
   * @dev Retract reward funds as a Sponsor for a particular risk.
-  * @param riskContract Contract the staker has a stake on.
+  * @param stakedContract Contract the staker has a stake on.
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param amount Amount of reward funds to be retracted.
   */
