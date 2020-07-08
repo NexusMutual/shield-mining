@@ -6,44 +6,44 @@ import "./interfaces/IPooledStaking.sol";
 contract CommunityStakingIncentives {
 
   IPooledStaking public pooledStaking;
-  uint public roundLength;
+  uint public roundDuration;
   uint public startTime;
 
-  constructor(uint roundLength, uint startTime) public {
-    roundLength = roundLength;
+  constructor(uint roundDuration, uint startTime) public {
+    roundDuration = roundDuration;
     startTime = startTime;
   }
 
-  struct BonusReward {
+  struct Reward {
     uint rewardRate;
     uint amount;
     mapping(address => uint) lastRoundClaimed;
   }
 
-  struct RiskRewardPool {
-    address riskContract;
+  struct StakingRewardPool {
+    address stakedContract;
     // risk -> ( ERC20 token address -> amount)
-    mapping (address => BonusReward) bonusRewards;
+    mapping (address => Reward) rewards;
   }
 
-  mapping (address => mapping (address => RiskRewardPool)) riskRewardPools;
+  mapping (address => mapping (address => StakingRewardPool)) stakingRewardPools;
 
   event RewardDeposit (
-    address riskContract,
+    address stakedContract,
     address sponsor,
     address tokenAddress,
     uint amount
   );
 
   event RewardRetraction (
-    address riskContract,
+    address stakedContract,
     address sponsor,
     address tokenAddress,
     uint amount
   );
 
   event RewardClaim (
-    address riskContract,
+    address stakedContract,
     address sponsor,
     address tokenAddress,
     uint amount,
@@ -57,26 +57,26 @@ contract CommunityStakingIncentives {
   * @param tokenAddress address of the ERC20 token of the reward funds.
   * @return rewardAmount amount rewarded
   */
-  function claimReward(address riskContract, address sponsor, address tokenAddress) public returns (uint rewardAmount) {
-    uint currentRound = (now - startTime) / roundLength + 1;
-    uint lastRoundClaimed = riskRewardPools[riskContract][sponsor].bonusRewards[tokenAddress].lastRoundClaimed[msg.sender];
+  function claimReward(address stakedContract, address sponsor, address tokenAddress) public returns (uint rewardAmount) {
+    uint currentRound = (now - startTime) / roundDuration + 1;
+    uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed for this round");
 
-    rewardAmount = pooledStaking.stakerContractStake(msg.sender, riskContract)
-      * riskRewardPools[riskContract][sponsor].bonusRewards[tokenAddress].rewardRate;
+    rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
+      * stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate;
 
-    uint rewardsAvailable = riskRewardPools[riskContract][sponsor].bonusRewards[tokenAddress].amount;
+    uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
 
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
     }
 
-    riskRewardPools[riskContract][sponsor].bonusRewards[tokenAddress].lastRoundClaimed[msg.sender] = currentRound;
-    riskRewardPools[riskContract][sponsor].bonusRewards[tokenAddress].amount -= rewardAmount;
+    stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender] = currentRound;
+    stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount -= rewardAmount;
 
     IERC20 erc20 = IERC20(tokenAddress);
     erc20.transfer(msg.sender, rewardAmount);
-    emit RewardClaim(riskContract, sponsor, tokenAddress, rewardAmount, msg.sender);
+    emit RewardClaim(stakedContract, sponsor, tokenAddress, rewardAmount, msg.sender);
   }
 
   /**
@@ -85,9 +85,9 @@ contract CommunityStakingIncentives {
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param rate Rate between the NXM stake and the reward amount.
   */
-  function setRatio(address riskContract, address tokenAddress, uint rate) external {
+  function setRatio(address stakedContract, address tokenAddress, uint rate) external {
     require(rate != 0, "Rate is 0");
-    riskRewardPools[riskContract][msg.sender].bonusRewards[tokenAddress].rewardRate = rate;
+    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].rewardRate = rate;
   }
 
   /**
@@ -96,29 +96,29 @@ contract CommunityStakingIncentives {
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param amount Amount of rewards to be deposited.
   */
-  function depositRewards(address riskContract, address tokenAddress, uint amount) external {
+  function depositRewards(address stakedContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
 
     erc20.transfer(address(this), amount);
-    riskRewardPools[riskContract][msg.sender].bonusRewards[tokenAddress].amount += amount;
-    emit RewardDeposit(riskContract, msg.sender, tokenAddress, amount);
+    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount += amount;
+    emit RewardDeposit(stakedContract, msg.sender, tokenAddress, amount);
   }
 
   /**
   * @dev Calls claimReward for each separate (risk, sponsor, token) tuple specified
   */
   function claimRewards(
-    address[] calldata riskContracts,
+    address[] calldata stakedContracts,
     address[] calldata sponsors,
     address[] calldata tokenAddresses
   ) external returns (uint[] memory tokensRewarded) {
 
-    require(riskContracts.length == sponsors.length, "riskContracts.length != sponsors.length");
-    require(riskContracts.length == tokenAddresses.length, "riskContracts.length != tokenAddresses.length");
+    require(stakedContracts.length == sponsors.length, "riskContracts.length != sponsors.length");
+    require(stakedContracts.length == tokenAddresses.length, "riskContracts.length != tokenAddresses.length");
 
-    tokensRewarded = new uint[](riskContracts.length);
-    for (uint i = 0; i < riskContracts.length; i++) {
-      tokensRewarded[i] = claimReward(riskContracts[i], sponsors[i], tokenAddresses[i]);
+    tokensRewarded = new uint[](stakedContracts.length);
+    for (uint i = 0; i < stakedContracts.length; i++) {
+      tokensRewarded[i] = claimReward(stakedContracts[i], sponsors[i], tokenAddresses[i]);
     }
     return tokensRewarded;
   }
@@ -129,11 +129,11 @@ contract CommunityStakingIncentives {
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param amount Amount of reward funds to be retracted.
   */
-  function retractRewards(address riskContract, address tokenAddress, uint amount) external {
+  function retractRewards(address stakedContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
 
     erc20.transfer(msg.sender, amount);
-    riskRewardPools[riskContract][msg.sender].bonusRewards[tokenAddress].amount -= amount;
-    emit RewardRetraction(riskContract, msg.sender, tokenAddress, amount);
+    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount -= amount;
+    emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
   }
 }
