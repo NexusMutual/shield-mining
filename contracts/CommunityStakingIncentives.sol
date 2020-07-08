@@ -159,8 +159,8 @@ contract CommunityStakingIncentives {
     uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
     require(currentAmount > amount, "Not enough tokens to withdraw.");
 
-    erc20.transfer(msg.sender, amount);
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.sub(amount);
+    erc20.transfer(msg.sender, amount);
     emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
   }
 
