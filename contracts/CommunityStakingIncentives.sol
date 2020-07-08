@@ -1,10 +1,12 @@
 pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/IPooledStaking.sol";
 import "./interfaces/INXMMaster.sol";
 
 contract CommunityStakingIncentives {
+  using SafeMath for uint;
 
   INXMMaster public master;
   uint public roundDuration;
@@ -105,7 +107,8 @@ contract CommunityStakingIncentives {
     IERC20 erc20 = IERC20(tokenAddress);
 
     erc20.transferFrom(msg.sender, address(this), amount);
-    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount += amount;
+    uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
+    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.add(amount);
     emit RewardDeposit(stakedContract, msg.sender, tokenAddress, amount);
   }
 
@@ -136,10 +139,11 @@ contract CommunityStakingIncentives {
   */
   function retractRewards(address stakedContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
-    require(stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount > amount, "Not enough tokens to withdraw.");
+    uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
+    require(currentAmount > amount, "Not enough tokens to withdraw.");
 
     erc20.transfer(msg.sender, amount);
-    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount -= amount;
+    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.sub(amount);
     emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
   }
 
