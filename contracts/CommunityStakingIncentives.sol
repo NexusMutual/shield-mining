@@ -79,7 +79,7 @@ contract CommunityStakingIncentives {
     require(rewardAmount > 0, "rewardAmount needs to be greater than 0");
 
     stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender] = currentRound;
-    stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount -= rewardAmount;
+    stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount = rewardsAvailable - rewardAmount;
 
     IERC20 erc20 = IERC20(tokenAddress);
     erc20.transfer(msg.sender, rewardAmount);
