@@ -32,8 +32,8 @@ contract CommunityStakingIncentives {
   mapping (address => mapping (address => StakingRewardPool)) stakingRewardPools;
 
   event RewardDeposit (
-    address stakedContract,
-    address sponsor,
+    address indexed stakedContract,
+    address indexed sponsor,
     address tokenAddress,
     uint amount
   );
@@ -104,7 +104,7 @@ contract CommunityStakingIncentives {
   function depositRewards(address stakedContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
 
-    erc20.transfer(address(this), amount);
+    erc20.transferFrom(msg.sender, address(this), amount);
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount += amount;
     emit RewardDeposit(stakedContract, msg.sender, tokenAddress, amount);
   }
@@ -136,6 +136,7 @@ contract CommunityStakingIncentives {
   */
   function retractRewards(address stakedContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
+    require(stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount > amount, "Not enough tokens to withdraw.");
 
     erc20.transfer(msg.sender, amount);
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount -= amount;
