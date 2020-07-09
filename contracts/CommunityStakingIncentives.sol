@@ -19,19 +19,20 @@ pragma solidity ^0.6.10;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./interfaces/IPooledStaking.sol";
 import "./interfaces/INXMMaster.sol";
 
-contract CommunityStakingIncentives {
+contract CommunityStakingIncentives is ReentrancyGuard {
   using SafeMath for uint;
 
   INXMMaster public master;
   uint public roundDuration;
-  uint public startTime;
+  uint public roundsStartTime;
 
-  constructor(uint _roundDuration, uint _startTime, address masterAddress) public {
+  constructor(uint _roundDuration, uint _roundsStartTime, address masterAddress) public {
     roundDuration = _roundDuration;
-    startTime = _startTime;
+    roundsStartTime = _roundsStartTime;
     master = INXMMaster(masterAddress);
   }
 
@@ -81,8 +82,12 @@ contract CommunityStakingIncentives {
   * @param tokenAddress address of the ERC20 token of the reward funds.
   * @return rewardAmount amount rewarded
   */
-  function claimReward(address stakedContract, address sponsor, address tokenAddress) public returns (uint rewardAmount) {
-    uint currentRound = (now - startTime) / roundDuration + 1;
+  function claimReward(
+    address stakedContract,
+    address sponsor,
+    address tokenAddress
+  ) public nonReentrant returns (uint rewardAmount) {
+    uint currentRound = (now - roundsStartTime) / roundDuration + 1;
     uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
@@ -154,7 +159,7 @@ contract CommunityStakingIncentives {
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param amount Amount of reward funds to be retracted.
   */
-  function retractRewards(address stakedContract, address tokenAddress, uint amount) external {
+  function retractRewards(address stakedContract, address tokenAddress, uint amount) external nonReentrant {
     IERC20 erc20 = IERC20(tokenAddress);
     uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
     require(currentAmount > amount, "Not enough tokens to withdraw.");
@@ -170,7 +175,7 @@ contract CommunityStakingIncentives {
     address sponsor,
     address tokenAddress
   ) external view returns (uint rewardAmount) {
-    uint currentRound = (now - startTime) / roundDuration + 1;
+    uint currentRound = (now - roundsStartTime) / roundDuration + 1;
     uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
     if (lastRoundClaimed >= currentRound) {
       return 0;

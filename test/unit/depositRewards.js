@@ -77,15 +77,15 @@ describe('depositRewards', function () {
 
     let staker;
     // let contracts = await ps.stakerContractsArray(staker);
-    contacts = [firstContract];
-
-    const pastEvents = await incentives.getPastEvents('RewardDeposit', {
-      fromBlock: 0,
-      filter: {
-        stakedContract: contracts,
-      }
-    });
-    console.log(`${pastEvents.length} events detected.`);
-    console.log(pastEvents);
+    // contacts = [firstContract];
+    //
+    // const pastEvents = await incentives.getPastEvents('RewardDeposit', {
+    //   fromBlock: 0,
+    //   filter: {
+    //     stakedContract: contracts,
+    //   }
+    // });
+    // console.log(`${pastEvents.length} events detected.`);
+    // console.log(pastEvents);
   });
 });
