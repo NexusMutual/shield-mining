@@ -4,7 +4,6 @@ const { assert } = require('chai');
 const { setup } = require('./setup');
 
 const firstContract = '0x0000000000000000000000000000000000000001';
-const secondContract = '0x0000000000000000000000000000000000000002';
 
 describe('depositRewards', function () {
 
@@ -21,10 +20,8 @@ describe('depositRewards', function () {
   it('should update the reward funds of a sponsor and emit RewardDeposit event', async function () {
     const { incentives, mockTokenA } = this;
 
-    const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
-    for (const sponsor of sponsors) {
-      await mockTokenA.issue(sponsor, ether('100'));
-    }
+    await mockTokenA.issue(sponsor1, ether('100'));
+
     const totalRewards = ether('1');
     await mockTokenA.approve(incentives.address, totalRewards, {
       from: sponsor1,

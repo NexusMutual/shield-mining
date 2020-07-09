@@ -4,7 +4,6 @@ const { assert } = require('chai');
 const { setup } = require('./setup');
 
 const firstContract = '0x0000000000000000000000000000000000000001';
-const secondContract = '0x0000000000000000000000000000000000000002';
 
 describe('retractRewards', function () {
 

@@ -114,7 +114,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param rate Rate between the NXM stake and the reward amount.
   */
-  function setRatio(address stakedContract, address tokenAddress, uint rate) external {
+  function setRewardRate(address stakedContract, address tokenAddress, uint rate) external {
     require(rate != 0, "Rate is 0");
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].rewardRate = rate;
   }
