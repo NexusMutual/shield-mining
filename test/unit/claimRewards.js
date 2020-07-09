@@ -117,7 +117,7 @@ describe('claimRewards', function () {
   });
 });
 
-describe.only('available sponsors and rewards flow', function () {
+describe('available sponsors and rewards flow', function () {
   const [
     sponsor1,
     sponsor2,
@@ -172,16 +172,16 @@ describe.only('available sponsors and rewards flow', function () {
     const tuples = getUniqueRewardTuples(pastEvents.map(e => e.args));
     for (const tuple of tuples) {
       const availableReward = await incentives.getAvailableStakerRewards(staker, tuple.stakedContract, tuple.sponsor, tuple.tokenAddress);
-      console.log(tuple);
       const rate = rewardRates[tuple.sponsor];
-      console.log(`rate ${rate}`);
       const expectedReward = stakerStake.muln(rate).toString();
       assert(availableReward.toString(), expectedReward);
     }
-    const stakedContracts = new Array(sponsors.length).fill(firstContract);
-    const tokenAddresses = new Array(sponsors.length).fill(mockTokenA.address);
 
-    await incentives.claimRewards(stakedContracts, sponsors, tokenAddresses, {
+
+    await incentives.claimRewards(
+      tuples.map(t => t.stakedContract),
+      tuples.map(t => t.sponsor),
+      tuples.map(t => t.tokenAddress), {
       from: staker,
     });
     const expectedRewardClaimedAmount =
