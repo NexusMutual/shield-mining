@@ -87,7 +87,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address sponsor,
     address tokenAddress
   ) public nonReentrant returns (uint rewardAmount) {
-    uint currentRound = (now - roundsStartTime) / roundDuration + 1;
+    uint currentRound = getCurrentRound();
     uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
@@ -139,7 +139,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param stakedContracts Contracts the staker has a stake on.
   * @param sponsors Sponsors to claim rewards from.
   * @param tokenAddresses Addresses of the ERC20 token of the reward funds.
-  * @param amount Amount of rewards to be deposited.
+  * @return tokensRewarded Tokens rewarded by each sponsor.
   */
   function claimRewards(
     address[] calldata stakedContracts,
@@ -179,7 +179,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address sponsor,
     address tokenAddress
   ) external view returns (uint rewardAmount) {
-    uint currentRound = (now - roundsStartTime) / roundDuration + 1;
+    uint currentRound = getCurrentRound();
     uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
     if (lastRoundClaimed >= currentRound) {
       return 0;
@@ -199,5 +199,9 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address tokenAddress
   ) external view returns (uint rewardAmount) {
     return stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
+  }
+
+  function getCurrentRound() public view returns (uint) {
+    return (now - roundsStartTime) / roundDuration + 1;
   }
 }
