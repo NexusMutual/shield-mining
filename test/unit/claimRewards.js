@@ -15,7 +15,7 @@ describe('claimReward', function () {
 
   beforeEach(setup);
 
-  it.only('should send reward funds to claiming staker and emit RewardClaim event', async function () {
+  it('should send reward funds to claiming staker and emit RewardClaim event', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsor = sponsor1;
@@ -50,6 +50,57 @@ describe('claimReward', function () {
       roundNumber: '1',
     });
 
+    const postRewardBalance = await mockTokenA.balanceOf(staker1);
+    assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
+  });
+});
+
+describe.only('claimRewards', function () {
+
+  const [
+    sponsor1,
+    sponsor2,
+    sponsor3,
+    sponsor4,
+    sponsor5,
+    staker1,
+  ] = accounts;
+  beforeEach(setup);
+
+  it('should send reward funds to claiming staker and emit RewardClaim event', async function () {
+    const { incentives, mockTokenA, pooledStaking } = this;
+
+    const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
+
+    const baseRewardFund = ether('10');
+    const rewardRate = 1;
+    let multiplier = 1;
+    const rewardFunds = [];
+    for (const sponsor of sponsors) {
+      await mockTokenA.issue(sponsor, ether('100'));
+      const totalRewards = baseRewardFund.muln(multiplier++);
+      rewardFunds.push(totalRewards);
+      await mockTokenA.approve(incentives.address, totalRewards, {
+        from: sponsor,
+      });
+      await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
+        from: sponsor,
+      });
+      await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRate, {
+        from: sponsor,
+      });
+    }
+
+    const staker1Stake = ether('1');
+    await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
+
+    const stakedContracts = new Array(sponsors.length).fill(firstContract);
+    const tokenAddresses = new Array(sponsors.length).fill(mockTokenA.address);
+
+    const tx = await incentives.claimRewards(stakedContracts, sponsors, tokenAddresses, {
+      from: staker1,
+    });
+    const expectedRewardClaimedAmount = staker1Stake.muln(rewardRate).muln(sponsors.length);
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
   });
