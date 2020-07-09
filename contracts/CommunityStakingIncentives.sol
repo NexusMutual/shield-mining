@@ -135,7 +135,11 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   /**
-  * @dev Calls claimReward for each separate (risk, sponsor, token) tuple specified
+  * @dev Calls claimReward for each separate (risk, sponsor, token) tuple specified.
+  * @param stakedContracts Contracts the staker has a stake on.
+  * @param sponsors Sponsors to claim rewards from.
+  * @param tokenAddresses Addresses of the ERC20 token of the reward funds.
+  * @param amount Amount of rewards to be deposited.
   */
   function claimRewards(
     address[] calldata stakedContracts,
