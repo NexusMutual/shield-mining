@@ -1,11 +1,12 @@
-const { ether, expectEvent } = require('@openzeppelin/test-helpers');
-const { accounts } = require('@openzeppelin/test-environment');
+const { ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
+const { accounts, web3 } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const { setup } = require('./setup');
+const BN = web3.utils.BN;
 
 const firstContract = '0x0000000000000000000000000000000000000001';
 
-describe('depositRewards', function () {
+describe.only('depositRewards', function () {
 
   const [
     sponsor1,
@@ -18,7 +19,7 @@ describe('depositRewards', function () {
 
   beforeEach(setup);
 
-  it('should update the reward funds of a sponsor and emit RewardDeposit event', async function () {
+  it('should update the reward funds of a sponsor, transfer tokens to contract, and emit RewardDeposit event', async function () {
     const { incentives, mockTokenA } = this;
 
     await mockTokenA.issue(sponsor1, ether('100'));
@@ -39,20 +40,25 @@ describe('depositRewards', function () {
 
     const storedAmount = await incentives.getRewardAmount(firstContract, sponsor1, mockTokenA.address);
     assert.equal(storedAmount.toString(), totalRewards);
+
+    const incentivesTokenABalance = await mockTokenA.balanceOf(incentives.address);
+    assert.equal(incentivesTokenABalance.toString(), totalRewards.toString());
   });
 
-  it('should update the reward funds for multiple sponsors for the same contract and emit RewardDeposit events,', async function () {
+  it('should update the reward funds for multiple sponsors for the same contract, transfer funds, and emit RewardDeposit events,', async function () {
     const { incentives, mockTokenA } = this;
 
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
     for (const sponsor of sponsors) {
       await mockTokenA.issue(sponsor, ether('100'));
     }
-    const totalRewards = ether('1');
+    const baseRewards = ether('1');
 
+    let totalRewards = new BN('0');
     let multiplier = 1;
     for (const sponsor of sponsors) {
-      const sponsorRewards = totalRewards.muln(multiplier++);
+      const sponsorRewards = baseRewards.muln(multiplier++);
+      totalRewards = totalRewards.add(sponsorRewards);
       await mockTokenA.approve(incentives.address, sponsorRewards, {
         from: sponsor,
       });
@@ -68,5 +74,37 @@ describe('depositRewards', function () {
       const storedAmount = await incentives.getRewardAmount(firstContract, sponsor, mockTokenA.address);
       assert.equal(storedAmount.toString(), sponsorRewards);
     }
+    const incentivesTokenABalance = await mockTokenA.balanceOf(incentives.address);
+    assert.equal(incentivesTokenABalance.toString(), totalRewards.toString());
   });
+
+  it('should revert when sponsor does not have enough funds', async function () {
+    const { incentives, mockTokenA } = this;
+
+    const issued = ether('1');
+    await mockTokenA.issue(sponsor1, issued);
+    const desiredRewards = issued.addn(1);
+    await mockTokenA.approve(incentives.address, issued, {
+      from: sponsor1,
+    });
+    await expectRevert(
+      incentives.depositRewards(firstContract, mockTokenA.address, desiredRewards, { from: sponsor1,}),
+      'ERC20: transfer amount exceeds balance.'
+      );
+  });
+
+  it('should revert when the token address does not exist', async function () {
+    const { incentives, mockTokenA } = this;
+
+    const issued = ether('1');
+    await mockTokenA.issue(sponsor1, issued);
+    await mockTokenA.approve(incentives.address, issued, {
+      from: sponsor1,
+    });
+    const nonExistantToken = '0x0000000000000000000000000000000000000666';
+    await expectRevert(
+      incentives.depositRewards(firstContract, nonExistantToken, issued, { from: sponsor1,}),
+      'revert'
+    );
+  })
 });

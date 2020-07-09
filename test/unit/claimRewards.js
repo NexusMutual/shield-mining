@@ -159,7 +159,6 @@ describe('available sponsors and rewards flow', function () {
     const stakerStake = ether('1');
     await pooledStaking.setStakerContractStake(staker, firstContract, stakerStake);
 
-    await pooledStaking.setStakerContractStake(staker, firstContract, stakerStake);
     let contracts = await pooledStaking.stakerContractsArray(staker);
     contacts = [firstContract];
 
@@ -176,7 +175,6 @@ describe('available sponsors and rewards flow', function () {
       const expectedReward = stakerStake.muln(rate).toString();
       assert(availableReward.toString(), expectedReward);
     }
-
 
     await incentives.claimRewards(
       tuples.map(t => t.stakedContract),
