@@ -17,6 +17,7 @@
 
 pragma solidity ^0.6.10;
 
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -24,6 +25,7 @@ import "./interfaces/IPooledStaking.sol";
 import "./interfaces/INXMMaster.sol";
 
 contract CommunityStakingIncentives is ReentrancyGuard {
+  using SafeERC20 for IERC20;
   using SafeMath for uint;
 
   INXMMaster public master;
@@ -105,7 +107,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount = rewardsAvailable - rewardAmount;
 
     IERC20 erc20 = IERC20(tokenAddress);
-    require(erc20.transfer(msg.sender, rewardAmount), "Transfer failed");
+    erc20.safeTransfer(msg.sender, rewardAmount);
     emit RewardClaim(stakedContract, sponsor, tokenAddress, rewardAmount, msg.sender, currentRound);
   }
 
@@ -129,7 +131,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   function depositRewards(address stakedContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
 
-    require(erc20.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+    erc20.safeTransferFrom(msg.sender, address(this), amount);
     uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.add(amount);
     emit RewardDeposit(stakedContract, msg.sender, tokenAddress, amount);
@@ -170,7 +172,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     require(currentAmount >= amount, "Not enough tokens to withdraw");
 
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.sub(amount);
-    require(erc20.transfer(msg.sender, amount), "Transfer failed");
+    erc20.safeTransfer(msg.sender, amount);
     emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
   }
 
