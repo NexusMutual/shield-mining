@@ -29,6 +29,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   INXMMaster public master;
   uint public roundDuration;
   uint public roundsStartTime;
+  uint public constant rewardRateScale = 1e18;
 
   constructor(uint _roundDuration, uint _roundsStartTime, address masterAddress) public {
     roundDuration = _roundDuration;
@@ -93,7 +94,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
-      .mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate);
+      .mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate).div(rewardRateScale);
     uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
@@ -112,7 +113,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @dev set the reward ratio as a sponsor for a particular contract and ERC20 token.
   * @param stakedContract Contract the staker has a stake on.
   * @param tokenAddress Address of the ERC20 token of the reward funds.
-  * @param rate Rate between the NXM stake and the reward amount.
+  * @param rate Rate between the NXM stake and the reward amount. (Scaled by 1e18)
   */
   function setRewardRate(address stakedContract, address tokenAddress, uint rate) external {
     require(rate != 0, "Rate is 0");
@@ -166,7 +167,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   function retractRewards(address stakedContract, address tokenAddress, uint amount) external nonReentrant {
     IERC20 erc20 = IERC20(tokenAddress);
     uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
-    require(currentAmount > amount, "Not enough tokens to withdraw.");
+    require(currentAmount >= amount, "Not enough tokens to withdraw");
 
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.sub(amount);
     erc20.transfer(msg.sender, amount);
@@ -186,7 +187,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     }
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
-    rewardAmount = stake.mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate);
+    rewardAmount = stake.mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate).div(rewardRateScale);
     uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;

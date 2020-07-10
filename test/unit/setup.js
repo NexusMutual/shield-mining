@@ -3,6 +3,7 @@ const MasterMock = contract.fromArtifact('MasterMock');
 const PooledStakingMock = contract.fromArtifact('PooledStakingMock');
 const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncentives');
 const MockTokenA = contract.fromArtifact('MockTokenA');
+const MockTokenB = contract.fromArtifact('MockTokenB');
 const { hex } = require('./utils');
 
 async function setup () {
@@ -14,6 +15,7 @@ async function setup () {
   const pooledStaking = await PooledStakingMock.new();
   const incentives = await CommunityStakingIncentives.new(roundDuration, now, master.address);
   const mockTokenA = await MockTokenA.new();
+  const mockTokenB = await MockTokenB.new();
 
   master.setLatestAddress(hex('PS'), pooledStaking.address);
 

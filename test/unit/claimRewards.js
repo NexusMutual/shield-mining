@@ -6,6 +6,8 @@ const BN = web3.utils.BN;
 
 const firstContract = '0x0000000000000000000000000000000000000001';
 
+const rewardRateScale = new BN('10').pow(new BN('18'));
+
 function getUniqueRewardTuples(events) {
   const set = new Set(events.map(e => `${e.stakedContract}|${e.sponsor}|${e.tokenAddress}`));
   return  Array.from(set).map(s => {
@@ -41,7 +43,7 @@ describe('claimReward', function () {
     await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
       from: sponsor,
     });
-    const rewardRate = 1;
+    const rewardRate = rewardRateScale;
     await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRate, {
       from: sponsor,
     });
@@ -52,7 +54,7 @@ describe('claimReward', function () {
     const tx = await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
       from: staker1,
     });
-    const expectedRewardClaimedAmount = staker1Stake.muln(rewardRate);
+    const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale);
     await expectEvent(tx, 'RewardClaim', {
       stakedContract: firstContract,
       sponsor,
@@ -84,7 +86,7 @@ describe('claimRewards', function () {
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
 
     const baseRewardFund = ether('10');
-    const rewardRate = 1;
+    const rewardRate = rewardRateScale;
     let multiplier = 1;
     const rewardFunds = [];
     for (const sponsor of sponsors) {
@@ -111,7 +113,7 @@ describe('claimRewards', function () {
     const tx = await incentives.claimRewards(stakedContracts, sponsors, tokenAddresses, {
       from: staker1,
     });
-    const expectedRewardClaimedAmount = staker1Stake.muln(rewardRate).muln(sponsors.length);
+    const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale).muln(sponsors.length);
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
   });
@@ -141,7 +143,7 @@ describe('available sponsors and rewards flow', function () {
     const rewardFunds = [];
     for (const sponsor of sponsors) {
       await mockTokenA.issue(sponsor, ether('100'));
-      rewardRate = multiplier;
+      rewardRate = rewardRateScale.muln(multiplier);
       const totalRewards = baseRewardFund.muln(multiplier++);
       rewardFunds.push(totalRewards);
       await mockTokenA.approve(incentives.address, totalRewards, {
@@ -172,7 +174,7 @@ describe('available sponsors and rewards flow', function () {
     for (const tuple of tuples) {
       const availableReward = await incentives.getAvailableStakerRewards(staker, tuple.stakedContract, tuple.sponsor, tuple.tokenAddress);
       const rate = rewardRates[tuple.sponsor];
-      const expectedReward = stakerStake.muln(rate).toString();
+      const expectedReward = stakerStake.mul(rate).div(rewardRateScale).toString();
       assert(availableReward.toString(), expectedReward);
     }
 
@@ -184,7 +186,7 @@ describe('available sponsors and rewards flow', function () {
     });
     const expectedRewardClaimedAmount =
       Object.values(rewardRates)
-        .map(rewardRate => stakerStake.muln(rewardRate))
+        .map(rewardRate => stakerStake.mul(rewardRate).div(rewardRateScale))
         .reduce((a, b) => a.add(b), new BN('0'));
     const postRewardBalance = await mockTokenA.balanceOf(staker);
 

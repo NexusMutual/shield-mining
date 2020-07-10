@@ -6,7 +6,7 @@ const BN = web3.utils.BN;
 
 const firstContract = '0x0000000000000000000000000000000000000001';
 
-describe.only('depositRewards', function () {
+describe('depositRewards', function () {
 
   const [
     sponsor1,
@@ -106,5 +106,5 @@ describe.only('depositRewards', function () {
       incentives.depositRewards(firstContract, nonExistantToken, issued, { from: sponsor1,}),
       'revert'
     );
-  })
+  });
 });
