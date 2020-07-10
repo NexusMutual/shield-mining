@@ -105,7 +105,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount = rewardsAvailable - rewardAmount;
 
     IERC20 erc20 = IERC20(tokenAddress);
-    erc20.transfer(msg.sender, rewardAmount);
+    require(erc20.transfer(msg.sender, rewardAmount), "Transfer failed");
     emit RewardClaim(stakedContract, sponsor, tokenAddress, rewardAmount, msg.sender, currentRound);
   }
 
@@ -129,7 +129,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   function depositRewards(address stakedContract, address tokenAddress, uint amount) external {
     IERC20 erc20 = IERC20(tokenAddress);
 
-    erc20.transferFrom(msg.sender, address(this), amount);
+    require(erc20.transferFrom(msg.sender, address(this), amount), "Transfer failed");
     uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.add(amount);
     emit RewardDeposit(stakedContract, msg.sender, tokenAddress, amount);
@@ -170,7 +170,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     require(currentAmount >= amount, "Not enough tokens to withdraw");
 
     stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.sub(amount);
-    erc20.transfer(msg.sender, amount);
+    require(erc20.transfer(msg.sender, amount), "Transfer failed");
     emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
   }
 
