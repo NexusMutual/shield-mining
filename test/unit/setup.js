@@ -23,6 +23,7 @@ async function setup () {
   this.pooledStaking = pooledStaking;
   this.incentives = incentives;
   this.mockTokenA = mockTokenA;
+  this.mockTokenB = mockTokenB;
 }
 
 module.exports = {
