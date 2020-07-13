@@ -135,7 +135,7 @@ describe('claimReward', function () {
         tokenAddress: mockTokenA.address,
         amount: expectedRewardClaimedAmount.toString(),
         receiver: staker1,
-        roundNumber: expectedRoundNumber
+        roundNumber: expectedRoundNumber,
       });
       const lastRoundClaimed = await incentives.getLastRoundClaimed(firstContract, sponsor, mockTokenA.address, staker1);
       assert.equal(lastRoundClaimed.toString(), expectedRoundNumber.toString());
