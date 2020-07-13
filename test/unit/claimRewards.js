@@ -128,14 +128,18 @@ describe('claimReward', function () {
         from: staker1,
       });
       const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale);
+      const expectedRoundNumber = (i + 1).toString();
       await expectEvent(tx, 'RewardClaim', {
         stakedContract: firstContract,
         sponsor,
         tokenAddress: mockTokenA.address,
         amount: expectedRewardClaimedAmount.toString(),
         receiver: staker1,
-        roundNumber: (i + 1).toString(),
+        roundNumber: expectedRoundNumber
       });
+      const lastRoundClaimed = await incentives.getLastRoundClaimed(firstContract, sponsor, mockTokenA.address, staker1);
+      assert.equal(lastRoundClaimed.toString(), expectedRoundNumber.toString());
+
       const roundDuration = (await incentives.roundDuration()).addn(10);
       await time.increase(roundDuration);
     }

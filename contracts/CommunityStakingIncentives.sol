@@ -207,7 +207,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address sponsor,
     address tokenAddress,
     address staker
-  ) external view returns (uint round) {
-    stakingRewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[staker];
+  ) external view returns (uint) {
+    return stakingRewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[staker];
   }
 }
