@@ -40,7 +40,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   struct Reward {
-    uint rewardRate;
+    uint rate;
     uint amount;
     mapping(address => uint) lastRoundClaimed;
   }
@@ -90,7 +90,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
-      .mul(stakingRewardPools[stakedContract][sponsor][tokenAddress].rewardRate).div(rewardRateScale);
+      .mul(stakingRewardPools[stakedContract][sponsor][tokenAddress].rate).div(rewardRateScale);
     uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor][tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
@@ -112,7 +112,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param rate Rate between the NXM stake and the reward amount. (Scaled by 1e18)
   */
   function setRewardRate(address stakedContract, address tokenAddress, uint rate) external {
-    stakingRewardPools[stakedContract][msg.sender][tokenAddress].rewardRate = rate;
+    stakingRewardPools[stakedContract][msg.sender][tokenAddress].rate = rate;
   }
 
   /**
@@ -182,7 +182,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     }
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
-    rewardAmount = stake.mul(stakingRewardPools[stakedContract][sponsor][tokenAddress].rewardRate).div(rewardRateScale);
+    rewardAmount = stake.mul(stakingRewardPools[stakedContract][sponsor][tokenAddress].rate).div(rewardRateScale);
     uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor][tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
@@ -195,7 +195,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address tokenAddress
   ) external view returns (uint amount, uint rate) {
     Reward memory reward = stakingRewardPools[stakedContract][sponsor][tokenAddress];
-    return (reward.amount, reward.rewardRate);
+    return (reward.amount, reward.rate);
   }
 
   function getCurrentRound() public view returns (uint) {

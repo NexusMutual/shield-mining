@@ -56,4 +56,12 @@ describe('getters and setters', function () {
     const { rate } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
     assert.equal(rate.toString(), rewardRateValue.toString());
   });
+
+  it('sets reward rate to 0', async function () {
+    const { incentives, mockTokenA } = this;
+    const rewardRateValue = new BN('0');
+    await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRateValue.toString(), { from: sponsor1 });
+    const { rate } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(rate.toString(), rewardRateValue.toString());
+  });
 });
