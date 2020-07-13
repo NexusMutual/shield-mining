@@ -112,7 +112,6 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param rate Rate between the NXM stake and the reward amount. (Scaled by 1e18)
   */
   function setRewardRate(address stakedContract, address tokenAddress, uint rate) external {
-    require(rate != 0, "Rate is 0");
     stakingRewardPools[stakedContract][msg.sender][tokenAddress].rewardRate = rate;
   }
 
