@@ -30,7 +30,7 @@ describe('getters and setters', function () {
   });
 
   it('gets correct round number as time passes', async function () {
-    const { incentives } = this;
+    const { incentives, mockTokenA } = this;
     const roundDuration = await incentives.roundDuration();
     let expectedCurrentRoundNumber = 1;
     assert.equal((await incentives.getCurrentRound()).toString(), expectedCurrentRoundNumber.toString());
@@ -49,7 +49,11 @@ describe('getters and setters', function () {
     assert.equal((await incentives.getCurrentRound()).toString(), expectedCurrentRoundNumber.toString());
   });
 
-  it('gets rewards funds values', async function () {
-    const { incentives } = this;
+  it('sets and gets reward rate', async function () {
+    const { incentives, mockTokenA } = this;
+    const rewardRateValue = new BN('12').pow(new BN('18'));
+    await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRateValue.toString(), { from: sponsor1 });
+    const { rate } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(rate.toString(), rewardRateValue.toString());
   });
 });
