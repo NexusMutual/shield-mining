@@ -39,14 +39,14 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     master = INXMMaster(masterAddress);
   }
 
-  struct Reward {
+  struct RewardPool {
     uint rate;
     uint amount;
     mapping(address => uint) lastRoundClaimed;
   }
 
   // stakedContractAddress => sponsorAddress => tokenAddress => Reward
-  mapping (address => mapping (address => mapping (address => Reward))) stakingRewardPools;
+  mapping (address => mapping (address => mapping (address => RewardPool))) stakingRewardPools;
 
   event RewardDeposit (
     address indexed stakedContract,
@@ -73,7 +73,6 @@ contract CommunityStakingIncentives is ReentrancyGuard {
 
   /**
   * @dev Claims reward as a NexusMutual staker.
-  * @param stakedContract contract the staker has a stake on.
   * @param stakedContract contract the staker has a stake on.
   * @param sponsor Sponsor providing the reward funds.
   * @param tokenAddress address of the ERC20 token of the reward funds.
@@ -169,6 +168,14 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
   }
 
+  /**
+  @dev Fetch the amount of available rewards for a staker for the current round from a particular reward pool.
+  * @param staker whose rewards are counted.
+  * @param stakedContract contract the staker has a stake on.
+  * @param sponsor Sponsor providing the reward funds.
+  * @param tokenAddress address of the ERC20 token of the reward funds.
+  * @return rewardAmount amount of reward tokens available for this particular staker.
+  */
   function getAvailableStakerRewards(
     address staker,
     address stakedContract,
@@ -189,19 +196,36 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     }
   }
 
-  function getReward(
+  /**
+  @dev Fetch the amount and rate of RewardPool.
+  * @param stakedContract contract a staker has a stake on.
+  * @param sponsor Sponsor providing the reward funds.
+  * @param tokenAddress address of the ERC20 token of the reward funds.
+  * @return amount total available token amount of the RewardPool
+  * @return rate rate to NXM of the RewardPool
+  */
+  function getRewardPool(
     address stakedContract,
     address sponsor,
     address tokenAddress
   ) external view returns (uint amount, uint rate) {
-    Reward memory reward = stakingRewardPools[stakedContract][sponsor][tokenAddress];
+    RewardPool memory reward = stakingRewardPools[stakedContract][sponsor][tokenAddress];
     return (reward.amount, reward.rate);
   }
 
+  /**
+  * @dev Fetch the current round number.
+  */
   function getCurrentRound() public view returns (uint) {
     return (now - roundsStartTime) / roundDuration + 1;
   }
 
+  /**
+  * @dev Fetch the last round in which a staker fetched his reward from a particular RewardPool.
+  * @param stakedContract contract a staker has a stake on.
+  * @param sponsor Sponsor providing the reward funds.
+  * @param tokenAddress address of the ERC20 token of the reward funds.
+  */
   function getLastRoundClaimed(
     address stakedContract,
     address sponsor,

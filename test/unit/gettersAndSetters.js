@@ -11,11 +11,6 @@ describe('getters and setters', function () {
   this.timeout(5000);
   const [
     sponsor1,
-    sponsor2,
-    sponsor3,
-    sponsor4,
-    sponsor5,
-    staker1,
   ] = accounts;
 
   beforeEach(setup);
@@ -53,7 +48,7 @@ describe('getters and setters', function () {
     const { incentives, mockTokenA } = this;
     const rewardRateValue = new BN('12').pow(new BN('18'));
     await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRateValue.toString(), { from: sponsor1 });
-    const { rate } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
+    const { rate } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(rate.toString(), rewardRateValue.toString());
   });
 
@@ -61,7 +56,7 @@ describe('getters and setters', function () {
     const { incentives, mockTokenA } = this;
     const rewardRateValue = new BN('0');
     await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRateValue.toString(), { from: sponsor1 });
-    const { rate } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
+    const { rate } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(rate.toString(), rewardRateValue.toString());
   });
 });

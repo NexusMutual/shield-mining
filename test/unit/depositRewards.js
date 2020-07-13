@@ -39,7 +39,7 @@ describe('depositRewards', function () {
       amount: totalRewards,
     });
 
-    const { amount: storedAmount } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
+    const { amount: storedAmount } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(storedAmount.toString(), totalRewards);
 
     const incentivesTokenABalance = await mockTokenA.balanceOf(incentives.address);
@@ -72,7 +72,7 @@ describe('depositRewards', function () {
         tokenAddress: mockTokenA.address,
         amount: sponsorRewards,
       });
-      const { amount: storedAmount } = await incentives.getReward(firstContract, sponsor, mockTokenA.address);
+      const { amount: storedAmount } = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
       assert.equal(storedAmount.toString(), sponsorRewards);
     }
     const incentivesTokenABalance = await mockTokenA.balanceOf(incentives.address);
@@ -119,7 +119,7 @@ describe('depositRewards', function () {
             tokenAddress: token.address,
             amount: sponsorRewards,
           });
-          const { amount: storedAmount } = await incentives.getReward(firstContract, sponsor, token.address);
+          const { amount: storedAmount } = await incentives.getRewardPool(firstContract, sponsor, token.address);
           assert.equal(storedAmount.toString(), sponsorRewards.toString(), `Failed for sponsor ${sponsorIndex} and token ${tokenIndex}`);
         }
       }
