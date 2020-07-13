@@ -1,4 +1,4 @@
-const { ether, expectEvent } = require('@openzeppelin/test-helpers');
+const { ether, expectEvent, expectRevert, time } = require('@openzeppelin/test-helpers');
 const { accounts, web3 } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const { setup } = require('./setup');
@@ -20,7 +20,8 @@ function getUniqueRewardTuples(events) {
   })
 }
 
-describe('claimReward', function () {
+describe.only('claimReward', function () {
+  this.timeout(5000);
 
   const [
     sponsor1,
@@ -66,6 +67,77 @@ describe('claimReward', function () {
 
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
+  });
+
+  it('should revert when staker attempts to claim reward two times within 1 round', async function () {
+    const { incentives, mockTokenA, pooledStaking } = this;
+
+    const sponsor = sponsor1;
+
+    await mockTokenA.issue(sponsor, ether('100'));
+
+    const totalRewards = ether('10');
+    await mockTokenA.approve(incentives.address, totalRewards, {
+      from: sponsor,
+    });
+    await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
+      from: sponsor,
+    });
+    const rewardRate = rewardRateScale;
+    await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRate, {
+      from: sponsor,
+    });
+
+    const staker1Stake = ether('1');
+    await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
+
+    const tx = await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
+      from: staker1,
+    });
+    await expectRevert(
+      incentives.claimReward(firstContract, sponsor, mockTokenA.address, { from: staker1 }),
+      'Already claimed this reward for this round'
+    );
+  });
+
+  it('should send reward funds to claiming staker and emit RewardClaim event for multiple rounds', async function () {
+    const { incentives, mockTokenA, pooledStaking } = this;
+
+    const sponsor = sponsor1;
+    await mockTokenA.issue(sponsor, ether('100'));
+    const totalRewards = ether('10');
+
+    const roundCount = 5;
+    for (let i =0; i < roundCount; i++) {
+      await mockTokenA.approve(incentives.address, totalRewards, {
+        from: sponsor,
+      });
+      await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
+        from: sponsor,
+      });
+      const rewardRate = rewardRateScale;
+      await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRate, {
+        from: sponsor,
+      });
+
+      const staker1Stake = ether('1');
+      await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
+
+      const tx = await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
+        from: staker1,
+      });
+      const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale);
+      await expectEvent(tx, 'RewardClaim', {
+        stakedContract: firstContract,
+        sponsor,
+        tokenAddress: mockTokenA.address,
+        amount: expectedRewardClaimedAmount.toString(),
+        receiver: staker1,
+        roundNumber: (i + 1).toString(),
+      });
+      const roundDuration = (await incentives.roundDuration()).addn(10);
+      await time.increase(roundDuration);
+    }
   });
 });
 
@@ -130,7 +202,7 @@ describe('available sponsors and rewards flow', function () {
   ] = accounts;
   beforeEach(setup);
 
-  it('should detect all available rewards for a user using RewardDeposit events and', async function () {
+  it('should detect all available rewards for a user using RewardDeposit events and compute all withdrawable reward values', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
