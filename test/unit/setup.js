@@ -27,6 +27,8 @@ async function setup () {
   this.mockTokenA = mockTokenA;
   this.mockTokenB = mockTokenB;
   this.mockTokenC = mockTokenC;
+  this.roundDuration = roundDuration;
+  this.startTime = now;
 }
 
 module.exports = {

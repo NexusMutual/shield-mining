@@ -45,14 +45,8 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     mapping(address => uint) lastRoundClaimed;
   }
 
-  struct StakingRewardPool {
-    address stakedContract;
-    // ERC20 token address => Reward
-    mapping (address => Reward) rewards;
-  }
-
-  // stakedContractAddress => sponsorAddress => riskRewardPool
-  mapping (address => mapping (address => StakingRewardPool)) stakingRewardPools;
+  // stakedContractAddress => sponsorAddress => tokenAddress => Reward
+  mapping (address => mapping (address => mapping (address => Reward))) stakingRewardPools;
 
   event RewardDeposit (
     address indexed stakedContract,
@@ -91,20 +85,20 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address tokenAddress
   ) public nonReentrant returns (uint rewardAmount) {
     uint currentRound = getCurrentRound();
-    uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
+    uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract)
-      .mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate).div(rewardRateScale);
-    uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
+      .mul(stakingRewardPools[stakedContract][sponsor][tokenAddress].rewardRate).div(rewardRateScale);
+    uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor][tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
     }
     require(rewardAmount > 0, "rewardAmount needs to be greater than 0");
 
-    stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender] = currentRound;
-    stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount = rewardsAvailable - rewardAmount;
+    stakingRewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[msg.sender] = currentRound;
+    stakingRewardPools[stakedContract][sponsor][tokenAddress].amount = rewardsAvailable - rewardAmount;
 
     IERC20 erc20 = IERC20(tokenAddress);
     erc20.safeTransfer(msg.sender, rewardAmount);
@@ -119,7 +113,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   */
   function setRewardRate(address stakedContract, address tokenAddress, uint rate) external {
     require(rate != 0, "Rate is 0");
-    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].rewardRate = rate;
+    stakingRewardPools[stakedContract][msg.sender][tokenAddress].rewardRate = rate;
   }
 
   /**
@@ -132,8 +126,8 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     IERC20 erc20 = IERC20(tokenAddress);
 
     erc20.safeTransferFrom(msg.sender, address(this), amount);
-    uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
-    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.add(amount);
+    uint currentAmount = stakingRewardPools[stakedContract][msg.sender][tokenAddress].amount;
+    stakingRewardPools[stakedContract][msg.sender][tokenAddress].amount = currentAmount.add(amount);
     emit RewardDeposit(stakedContract, msg.sender, tokenAddress, amount);
   }
 
@@ -168,10 +162,10 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   */
   function retractRewards(address stakedContract, address tokenAddress, uint amount) external nonReentrant {
     IERC20 erc20 = IERC20(tokenAddress);
-    uint currentAmount = stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount;
+    uint currentAmount = stakingRewardPools[stakedContract][msg.sender][tokenAddress].amount;
     require(currentAmount >= amount, "Not enough tokens to withdraw");
 
-    stakingRewardPools[stakedContract][msg.sender].rewards[tokenAddress].amount = currentAmount.sub(amount);
+    stakingRewardPools[stakedContract][msg.sender][tokenAddress].amount = currentAmount.sub(amount);
     erc20.safeTransfer(msg.sender, amount);
     emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
   }
@@ -183,28 +177,38 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address tokenAddress
   ) external view returns (uint rewardAmount) {
     uint currentRound = getCurrentRound();
-    uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].lastRoundClaimed[msg.sender];
+    uint lastRoundClaimed = stakingRewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[msg.sender];
     if (lastRoundClaimed >= currentRound) {
       return 0;
     }
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
-    rewardAmount = stake.mul(stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].rewardRate).div(rewardRateScale);
-    uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
+    rewardAmount = stake.mul(stakingRewardPools[stakedContract][sponsor][tokenAddress].rewardRate).div(rewardRateScale);
+    uint rewardsAvailable = stakingRewardPools[stakedContract][sponsor][tokenAddress].amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
     }
   }
 
-  function getRewardAmount(
+  function getReward(
     address stakedContract,
     address sponsor,
     address tokenAddress
-  ) external view returns (uint rewardAmount) {
-    return stakingRewardPools[stakedContract][sponsor].rewards[tokenAddress].amount;
+  ) external view returns (uint amount, uint rate) {
+    Reward memory reward = stakingRewardPools[stakedContract][sponsor][tokenAddress];
+    return (reward.amount, reward.rewardRate);
   }
 
   function getCurrentRound() public view returns (uint) {
     return (now - roundsStartTime) / roundDuration + 1;
+  }
+
+  function getLastRoundClaimed(
+    address stakedContract,
+    address sponsor,
+    address tokenAddress,
+    address staker
+  ) external view returns (uint round) {
+    stakingRewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[staker];
   }
 }

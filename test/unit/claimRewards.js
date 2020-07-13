@@ -20,7 +20,7 @@ function getUniqueRewardTuples(events) {
   })
 }
 
-describe.only('claimReward', function () {
+describe('claimReward', function () {
   this.timeout(5000);
 
   const [
@@ -55,6 +55,7 @@ describe.only('claimReward', function () {
     const tx = await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
       from: staker1,
     });
+    console.log(`claimReward gas used ${tx.receipt.gasUsed}`);
     const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale);
     await expectEvent(tx, 'RewardClaim', {
       stakedContract: firstContract,
@@ -91,7 +92,7 @@ describe.only('claimReward', function () {
     const staker1Stake = ether('1');
     await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
 
-    const tx = await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
+    await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
       from: staker1,
     });
     await expectRevert(
@@ -185,6 +186,7 @@ describe('claimRewards', function () {
     const tx = await incentives.claimRewards(stakedContracts, sponsors, tokenAddresses, {
       from: staker1,
     });
+    console.log(`claimRewards gas used ${tx.receipt.gasUsed}`);
     const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale).muln(sponsors.length);
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());

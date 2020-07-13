@@ -39,7 +39,7 @@ describe('depositRewards', function () {
       amount: totalRewards,
     });
 
-    const storedAmount = await incentives.getRewardAmount(firstContract, sponsor1, mockTokenA.address);
+    const { amount: storedAmount } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
     assert.equal(storedAmount.toString(), totalRewards);
 
     const incentivesTokenABalance = await mockTokenA.balanceOf(incentives.address);
@@ -72,14 +72,14 @@ describe('depositRewards', function () {
         tokenAddress: mockTokenA.address,
         amount: sponsorRewards,
       });
-      const storedAmount = await incentives.getRewardAmount(firstContract, sponsor, mockTokenA.address);
+      const { amount: storedAmount } = await incentives.getReward(firstContract, sponsor, mockTokenA.address);
       assert.equal(storedAmount.toString(), sponsorRewards);
     }
     const incentivesTokenABalance = await mockTokenA.balanceOf(incentives.address);
     assert.equal(incentivesTokenABalance.toString(), totalRewards.toString());
   });
 
-  it.only('should update reward funds for multiple sponsors and multiple tokens, transfer funds and emit RewardDeposit events',
+  it('should update reward funds for multiple sponsors and multiple tokens, transfer funds and emit RewardDeposit events',
     async function () {
     const { incentives, mockTokenA, mockTokenB, mockTokenC } = this;
 
@@ -94,7 +94,8 @@ describe('depositRewards', function () {
 
     let totalRewards = {};
     let multiplier = 1;
-    for (const sponsor of sponsors) {
+    for (let sponsorIndex = 0; i < sponsors.length; sponsorIndex++) {
+      const sponsor = sponsors[sponsorIndex];
       let sponsorRewards = baseRewards.muln(multiplier++);
       let tokenMultiplier = 0.1;
       for (const token of tokens) {
@@ -117,8 +118,8 @@ describe('depositRewards', function () {
           tokenAddress: token.address,
           amount: sponsorRewards,
         });
-        const storedAmount = await incentives.getRewardAmount(firstContract, sponsor, token.address);
-        assert.equal(storedAmount.toString(), sponsorRewards);
+        const { amount: storedAmount } = await incentives.getReward(firstContract, sponsor, mockTokenA.address);
+        assert.equal(storedAmount.toString(), sponsorRewards.toString(), `Failed for sponsor ${sponsor} and token ${token.address}`);
       }
     }
 

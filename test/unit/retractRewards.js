@@ -39,7 +39,7 @@ describe('retractRewards', function () {
     });
 
     const expectedRewardsLeft = totalRewards.sub(rewardsToRetract);
-    const storedAmount = await incentives.getRewardAmount(firstContract, sponsor1, mockTokenA.address);
+    const { amount: storedAmount } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
     assert.equal(storedAmount.toString(), expectedRewardsLeft.toString());
 
     const postRetractionIncentivesBalance = await mockTokenA.balanceOf(incentives.address);
@@ -73,7 +73,7 @@ describe('retractRewards', function () {
       tokenAddress: mockTokenA.address,
       amount: totalRewards.toString(),
     });
-    const storedAmount = await incentives.getRewardAmount(firstContract, sponsor1, mockTokenA.address);
+    const { amount: storedAmount } = await incentives.getReward(firstContract, sponsor1, mockTokenA.address);
     assert.equal(storedAmount.toString(), '0');
     const postRetractionIncentivesBalance = await mockTokenA.balanceOf(incentives.address);
     assert.equal(postRetractionIncentivesBalance.toString(), '0');
