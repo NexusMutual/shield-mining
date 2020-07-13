@@ -97,7 +97,7 @@ describe('retractRewards', function () {
     const rewardsToRetract = totalRewards.addn(2);
     await expectRevert(
       incentives.retractRewards(firstContract, mockTokenA.address, rewardsToRetract, { from: sponsor1 }),
-      'Not enough tokens to withdraw'
+      'Not enough tokens to withdraw',
     );
   });
 
@@ -114,8 +114,8 @@ describe('retractRewards', function () {
     });
     const nonExistantToken = '0x0000000000000000000000000000000000000666';
     await expectRevert(
-      incentives.retractRewards(firstContract, nonExistantToken, '10', { from: sponsor1,}),
-      'revert'
+      incentives.retractRewards(firstContract, nonExistantToken, '10', { from: sponsor1 }),
+      'revert',
     );
   });
 });

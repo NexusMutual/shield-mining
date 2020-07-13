@@ -8,16 +8,16 @@ const firstContract = '0x0000000000000000000000000000000000000001';
 
 const rewardRateScale = new BN('10').pow(new BN('18'));
 
-function getUniqueRewardTuples(events) {
+function getUniqueRewardTuples (events) {
   const set = new Set(events.map(e => `${e.stakedContract}|${e.sponsor}|${e.tokenAddress}`));
-  return  Array.from(set).map(s => {
-     const chunks = s.split('|');
-     return {
-       stakedContract: chunks[0],
-       sponsor: chunks[1],
-       tokenAddress: chunks[2],
-     }
-  })
+  return Array.from(set).map(s => {
+    const chunks = s.split('|');
+    return {
+      stakedContract: chunks[0],
+      sponsor: chunks[1],
+      tokenAddress: chunks[2],
+    };
+  });
 }
 
 describe('claimReward', function () {
@@ -97,7 +97,7 @@ describe('claimReward', function () {
     });
     await expectRevert(
       incentives.claimReward(firstContract, sponsor, mockTokenA.address, { from: staker1 }),
-      'Already claimed this reward for this round'
+      'Already claimed this reward for this round',
     );
   });
 
@@ -109,7 +109,7 @@ describe('claimReward', function () {
     const totalRewards = ether('10');
 
     const roundCount = 5;
-    for (let i =0; i < roundCount; i++) {
+    for (let i = 0; i < roundCount; i++) {
       await mockTokenA.approve(incentives.address, totalRewards, {
         from: sponsor,
       });
@@ -209,7 +209,7 @@ describe('available sponsors and rewards flow', function () {
 
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
 
-    let staker = staker1;
+    const staker = staker1;
     const baseRewardFund = ether('10');
     let rewardRate;
     let multiplier = 1;
@@ -235,14 +235,13 @@ describe('available sponsors and rewards flow', function () {
     const stakerStake = ether('1');
     await pooledStaking.setStakerContractStake(staker, firstContract, stakerStake);
 
-    let contracts = await pooledStaking.stakerContractsArray(staker);
-    contacts = [firstContract];
+    const contracts = await pooledStaking.stakerContractsArray(staker);
 
     const pastEvents = await incentives.getPastEvents('RewardDeposit', {
       fromBlock: 0,
       filter: {
         stakedContract: contracts,
-      }
+      },
     });
     const tuples = getUniqueRewardTuples(pastEvents.map(e => e.args));
     for (const tuple of tuples) {
@@ -256,8 +255,8 @@ describe('available sponsors and rewards flow', function () {
       tuples.map(t => t.stakedContract),
       tuples.map(t => t.sponsor),
       tuples.map(t => t.tokenAddress), {
-      from: staker,
-    });
+        from: staker,
+      });
     const expectedRewardClaimedAmount =
       Object.values(rewardRates)
         .map(rewardRate => stakerStake.mul(rewardRate).div(rewardRateScale))
@@ -267,4 +266,3 @@ describe('available sponsors and rewards flow', function () {
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
   });
 });
-

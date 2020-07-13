@@ -15,7 +15,7 @@ describe('getters and setters', function () {
     sponsor3,
     sponsor4,
     sponsor5,
-    staker1
+    staker1,
   ] = accounts;
 
   beforeEach(setup);
