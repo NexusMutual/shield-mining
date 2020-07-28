@@ -34,6 +34,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   uint public constant rewardRateScale = 1e18;
 
   constructor(uint _roundDuration, uint _roundsStartTime, address masterAddress) public {
+
     require(_roundDuration > 0, "_roundDuration needs to be greater than 0");
     require(_roundsStartTime >= now, "_roundsStartTime needs to be in the future");
     roundDuration = _roundDuration;
@@ -90,8 +91,8 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param amount Amount of rewards to be deposited.
   */
   function depositRewards(address stakedContract, address tokenAddress, uint amount) external {
-    IERC20 erc20 = IERC20(tokenAddress);
 
+    IERC20 erc20 = IERC20(tokenAddress);
     erc20.safeTransferFrom(msg.sender, address(this), amount);
     RewardPool storage pool = rewardPools[stakedContract][msg.sender][tokenAddress];
     pool.amount = pool.amount.add(amount);
@@ -185,6 +186,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address sponsor,
     address tokenAddress
   ) external view returns (uint rewardAmount) {
+
     uint currentRound = getCurrentRound();
     RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
     uint lastRoundClaimed = pool.lastRoundClaimed[msg.sender];
