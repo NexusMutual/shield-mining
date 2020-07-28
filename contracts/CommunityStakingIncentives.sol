@@ -99,7 +99,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     require(rewardAmount > 0, "rewardAmount needs to be greater than 0");
 
     pool.lastRoundClaimed[msg.sender] = currentRound;
-    pool.amount = rewardsAvailable - rewardAmount;
+    pool.amount = rewardsAvailable.sub(rewardAmount);
 
     IERC20 erc20 = IERC20(tokenAddress);
     erc20.safeTransfer(msg.sender, rewardAmount);
@@ -191,8 +191,9 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     }
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
-    rewardAmount = stake.mul(rewardPools[stakedContract][sponsor][tokenAddress].rate).div(rewardRateScale);
-    uint rewardsAvailable = rewardPools[stakedContract][sponsor][tokenAddress].amount;
+    RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
+    rewardAmount = stake.mul(pool.rate).div(rewardRateScale);
+    uint rewardsAvailable = pool.amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
     }
@@ -211,8 +212,8 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address sponsor,
     address tokenAddress
   ) external view returns (uint amount, uint rate) {
-    RewardPool memory reward = rewardPools[stakedContract][sponsor][tokenAddress];
-    return (reward.amount, reward.rate);
+    RewardPool memory pool = rewardPools[stakedContract][sponsor][tokenAddress];
+    return (pool.amount, pool.rate);
   }
 
   /**
