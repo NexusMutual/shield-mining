@@ -24,7 +24,6 @@ async function setup () {
   const mockTokenC = await MockTokenC.new();
 
   master.setLatestAddress(hex('PS'), pooledStaking.address);
-
   await time.increase(roundsStartTimeSecondsUntilStart);
 
   this.master = master;

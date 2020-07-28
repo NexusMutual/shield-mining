@@ -33,6 +33,12 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   uint public roundsStartTime;
   uint public constant rewardRateScale = 1e18;
 
+  /**
+  * @dev Add rewards as a sponsor for a particular contract.
+  * @param _roundDuration Duration of a reward round in seconds.
+  * @param _roundsStartTime Timestamp in seconds at which rounds start. Needs to be in the future.
+  * @param masterAddress NexusMutual Master contract address.
+  */
   constructor(uint _roundDuration, uint _roundsStartTime, address masterAddress) public {
 
     require(_roundDuration > 0, "_roundDuration needs to be greater than 0");

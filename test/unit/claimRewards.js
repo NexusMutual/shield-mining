@@ -1,11 +1,11 @@
 const { ether, expectEvent, expectRevert, time } = require('@openzeppelin/test-helpers');
-const { accounts, web3 } = require('@openzeppelin/test-environment');
+const { accounts, web3, contract } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const { setup } = require('./setup');
+const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncentives');
 const BN = web3.utils.BN;
 
 const firstContract = '0x0000000000000000000000000000000000000001';
-
 const rewardRateScale = new BN('10').pow(new BN('18'));
 
 function getUniqueRewardTuples (events) {
@@ -184,6 +184,33 @@ describe('claimRewards', function () {
     const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale).muln(sponsors.length);
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
+  });
+});
+
+describe('claimRewards before roundsStartTime', function () {
+  this.timeout(5000);
+
+  const [
+    sponsor,
+    staker1,
+  ] = accounts;
+  const masterAddress = '0x0000000000000000000000000000000000000001';
+  const tokenAddress = '0x0000000000000000000000000000000000000002';
+
+  beforeEach(async function () {
+    const latest = (await time.latest()).toNumber();
+    const roundsStartTime = latest + 10;
+    const roundDuration = 14 * 24 * 60 * 60;
+    const incentives = await CommunityStakingIncentives.new(roundDuration, roundsStartTime, masterAddress);
+    this.incentives = incentives;
+  });
+
+  it('reverts if staker attempts to claim rewards', async function () {
+    const { incentives } = this;
+    await expectRevert(
+      incentives.claimRewards([firstContract], [sponsor], [tokenAddress], { from: staker1 }),
+      `Rounds haven't started yet`,
+    );
   });
 });
 
