@@ -5,7 +5,7 @@ const { setup } = require('./setup');
 
 const firstContract = '0x0000000000000000000000000000000000000001';
 
-describe('retractRewards', function () {
+describe('withdrawRewards', function () {
 
   const [
     sponsor1,
@@ -13,7 +13,7 @@ describe('retractRewards', function () {
 
   beforeEach(setup);
 
-  it('should update the reward funds of a sponsor. transfer the the funds, and emit RewardRetraction event', async function () {
+  it('should update the reward funds of a sponsor. transfer the the funds, and emit Withdrawn event', async function () {
     const { incentives, mockTokenA } = this;
 
     const issued = ether('100');
@@ -27,11 +27,11 @@ describe('retractRewards', function () {
     });
 
     const rewardsToRetract = totalRewards.divn(2);
-    const tx = await incentives.retractRewards(firstContract, mockTokenA.address, rewardsToRetract, {
+    const tx = await incentives.withdrawRewards(firstContract, mockTokenA.address, rewardsToRetract, {
       from: sponsor1,
     });
 
-    await expectEvent(tx, 'RewardRetraction', {
+    await expectEvent(tx, 'Withdrawn', {
       stakedContract: firstContract,
       sponsor: sponsor1,
       tokenAddress: mockTokenA.address,
@@ -50,7 +50,7 @@ describe('retractRewards', function () {
     assert.equal(postRetractionSponsorBalance.toString(), newExpectedSponsorBalance.toString());
   });
 
-  it('should update the reward funds of a sponsor, transfer funds when all funds are retracted', async function () {
+  it('should update the reward funds of a sponsor, transfer funds when all funds are withdrawn', async function () {
     const { incentives, mockTokenA } = this;
 
     const issued = ether('100');
@@ -63,11 +63,11 @@ describe('retractRewards', function () {
       from: sponsor1,
     });
 
-    const tx = await incentives.retractRewards(firstContract, mockTokenA.address, totalRewards, {
+    const tx = await incentives.withdrawRewards(firstContract, mockTokenA.address, totalRewards, {
       from: sponsor1,
     });
 
-    await expectEvent(tx, 'RewardRetraction', {
+    await expectEvent(tx, 'Withdrawn', {
       stakedContract: firstContract,
       sponsor: sponsor1,
       tokenAddress: mockTokenA.address,
@@ -96,7 +96,7 @@ describe('retractRewards', function () {
 
     const rewardsToRetract = totalRewards.addn(2);
     await expectRevert(
-      incentives.retractRewards(firstContract, mockTokenA.address, rewardsToRetract, { from: sponsor1 }),
+      incentives.withdrawRewards(firstContract, mockTokenA.address, rewardsToRetract, { from: sponsor1 }),
       'Not enough tokens to withdraw',
     );
   });
@@ -114,7 +114,7 @@ describe('retractRewards', function () {
     });
     const nonExistantToken = '0x0000000000000000000000000000000000000666';
     await expectRevert(
-      incentives.retractRewards(firstContract, nonExistantToken, '10', { from: sponsor1 }),
+      incentives.withdrawRewards(firstContract, nonExistantToken, '10', { from: sponsor1 }),
       'revert',
     );
   });

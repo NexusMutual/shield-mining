@@ -59,7 +59,6 @@ describe('claimRewards', function () {
     const tx = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
     });
-    console.log(`claimReward gas used ${tx.receipt.gasUsed}`);
     const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale);
     await expectEvent(tx, 'Claimed', {
       stakedContract: firstContract,
@@ -182,7 +181,6 @@ describe('claimRewards', function () {
     const tx = await incentives.claimRewards(stakedContracts, sponsors, tokenAddresses, {
       from: staker1,
     });
-    console.log(`claimRewards gas used ${tx.receipt.gasUsed}`);
     const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale).muln(sponsors.length);
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());

@@ -6,7 +6,7 @@ const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncent
 
 const masterAddress = '0x0000000000000000000000000000000000000001';
 
-describe.only('constructor', function () {
+describe('constructor', function () {
   this.timeout(5000);
 
   it('should initialize roundDuration and roundsStartTime correctly', async function () {

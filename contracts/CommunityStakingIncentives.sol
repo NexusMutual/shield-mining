@@ -57,7 +57,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     uint amount
   );
 
-  event RewardRetraction (
+  event Withdrawn (
     address stakedContract,
     address sponsor,
     address tokenAddress,
@@ -162,14 +162,14 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param amount Amount of reward funds to be retracted.
   */
-  function retractRewards(address stakedContract, address tokenAddress, uint amount) external nonReentrant {
+  function withdrawRewards(address stakedContract, address tokenAddress, uint amount) external nonReentrant {
     IERC20 erc20 = IERC20(tokenAddress);
     uint currentAmount = rewardPools[stakedContract][msg.sender][tokenAddress].amount;
     require(currentAmount >= amount, "Not enough tokens to withdraw");
 
     rewardPools[stakedContract][msg.sender][tokenAddress].amount = currentAmount.sub(amount);
     erc20.safeTransfer(msg.sender, amount);
-    emit RewardRetraction(stakedContract, msg.sender, tokenAddress, amount);
+    emit Withdrawn(stakedContract, msg.sender, tokenAddress, amount);
   }
 
   /**

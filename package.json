@@ -5,7 +5,6 @@
   "main": "networks.js",
   "scripts": {
     "compile": "oz compile",
-    "test-unit": "mocha --exit test/unit",
     "test": "mocha --exit test"
   },
   "author": "",
