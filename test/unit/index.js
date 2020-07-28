@@ -7,4 +7,5 @@ describe('CommunityStakingIncentives unit tests', function () {
   require('./retractRewards');
   require('./claimRewards');
   require('./gettersAndSetters');
+  require('./constructor');
 });
