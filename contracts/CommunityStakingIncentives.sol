@@ -135,12 +135,11 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   ) internal returns (uint rewardAmount) {
 
     uint currentRound = getCurrentRound();
-    uint lastRoundClaimed = rewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[msg.sender];
+    RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
+    uint lastRoundClaimed = pool.lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
-    RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
-
     rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract).mul(pool.rate).div(rewardRateScale);
     uint rewardsAvailable = pool.amount;
     if (rewardAmount > rewardsAvailable) {
@@ -187,13 +186,13 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address tokenAddress
   ) external view returns (uint rewardAmount) {
     uint currentRound = getCurrentRound();
-    uint lastRoundClaimed = rewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[msg.sender];
+    RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
+    uint lastRoundClaimed = pool.lastRoundClaimed[msg.sender];
     if (lastRoundClaimed >= currentRound) {
       return 0;
     }
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
-    RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
     rewardAmount = stake.mul(pool.rate).div(rewardRateScale);
     uint rewardsAvailable = pool.amount;
     if (rewardAmount > rewardsAvailable) {
