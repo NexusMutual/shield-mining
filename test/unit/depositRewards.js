@@ -20,7 +20,7 @@ describe('depositRewards', function () {
 
   beforeEach(setup);
 
-  it('should update the reward funds of a sponsor, transfer tokens to contract, and emit RewardDeposit event', async function () {
+  it('should update the reward funds of a sponsor, transfer tokens to contract, and emit Deposited event', async function () {
     const { incentives, mockTokenA } = this;
 
     await mockTokenA.issue(sponsor1, ether('100'));
@@ -32,7 +32,7 @@ describe('depositRewards', function () {
     const tx = await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
       from: sponsor1,
     });
-    await expectEvent(tx, 'RewardDeposit', {
+    await expectEvent(tx, 'Deposited', {
       stakedContract: firstContract,
       sponsor: sponsor1,
       tokenAddress: mockTokenA.address,
@@ -46,7 +46,7 @@ describe('depositRewards', function () {
     assert.equal(incentivesTokenABalance.toString(), totalRewards.toString());
   });
 
-  it('should update reward funds for multiple sponsors for the same contract, transfer funds, and emit RewardDeposit events,', async function () {
+  it('should update reward funds for multiple sponsors for the same contract, transfer funds, and emit Deposited events,', async function () {
     const { incentives, mockTokenA } = this;
 
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
@@ -66,7 +66,7 @@ describe('depositRewards', function () {
       const tx = await incentives.depositRewards(firstContract, mockTokenA.address, sponsorRewards, {
         from: sponsor,
       });
-      await expectEvent(tx, 'RewardDeposit', {
+      await expectEvent(tx, 'Deposited', {
         stakedContract: firstContract,
         sponsor: sponsor,
         tokenAddress: mockTokenA.address,
@@ -79,7 +79,7 @@ describe('depositRewards', function () {
     assert.equal(incentivesTokenABalance.toString(), totalRewards.toString());
   });
 
-  it('should update reward funds for multiple sponsors and multiple tokens, transfer funds and emit RewardDeposit events',
+  it('should update reward funds for multiple sponsors and multiple tokens, transfer funds and emit Deposited events',
     async function () {
       const { incentives, mockTokenA, mockTokenB, mockTokenC } = this;
 
@@ -113,7 +113,7 @@ describe('depositRewards', function () {
           const tx = await incentives.depositRewards(firstContract, token.address, sponsorRewards, {
             from: sponsor,
           });
-          await expectEvent(tx, 'RewardDeposit', {
+          await expectEvent(tx, 'Deposited', {
             stakedContract: firstContract,
             sponsor: sponsor,
             tokenAddress: token.address,

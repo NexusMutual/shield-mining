@@ -30,7 +30,7 @@ describe('claimReward', function () {
 
   beforeEach(setup);
 
-  it('should send reward funds to claiming staker and emit RewardClaim event', async function () {
+  it('should send reward funds to claiming staker and emit Claimed event', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsor = sponsor1;
@@ -57,7 +57,7 @@ describe('claimReward', function () {
     });
     console.log(`claimReward gas used ${tx.receipt.gasUsed}`);
     const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale);
-    await expectEvent(tx, 'RewardClaim', {
+    await expectEvent(tx, 'Claimed', {
       stakedContract: firstContract,
       sponsor,
       tokenAddress: mockTokenA.address,
@@ -101,7 +101,7 @@ describe('claimReward', function () {
     );
   });
 
-  it('should send reward funds to claiming staker and emit RewardClaim event for multiple rounds', async function () {
+  it('should send reward funds to claiming staker and emit Claimed event for multiple rounds', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsor = sponsor1;
@@ -129,7 +129,7 @@ describe('claimReward', function () {
       });
       const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale);
       const expectedRoundNumber = (i + 1).toString();
-      await expectEvent(tx, 'RewardClaim', {
+      await expectEvent(tx, 'Claimed', {
         stakedContract: firstContract,
         sponsor,
         tokenAddress: mockTokenA.address,
@@ -157,7 +157,7 @@ describe('claimRewards', function () {
   ] = accounts;
   beforeEach(setup);
 
-  it('should send reward funds to claiming staker and emit RewardClaim event', async function () {
+  it('should send reward funds to claiming staker and emit Rewarded event', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
@@ -208,7 +208,7 @@ describe('available sponsors and rewards flow', function () {
   ] = accounts;
   beforeEach(setup);
 
-  it('should detect all available rewards for a user using RewardDeposit events and compute all withdrawable reward values', async function () {
+  it('should detect all available rewards for a user using Deposited events and compute all withdrawable reward values', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
@@ -241,7 +241,7 @@ describe('available sponsors and rewards flow', function () {
 
     const contracts = await pooledStaking.stakerContractsArray(staker);
 
-    const pastEvents = await incentives.getPastEvents('RewardDeposit', {
+    const pastEvents = await incentives.getPastEvents('Deposited', {
       fromBlock: 0,
       filter: {
         stakedContract: contracts,

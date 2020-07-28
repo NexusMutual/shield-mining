@@ -25,7 +25,7 @@ describe('getters and setters', function () {
   });
 
   it('gets correct round number as time passes', async function () {
-    const { incentives, mockTokenA } = this;
+    const { incentives } = this;
     const roundDuration = await incentives.roundDuration();
     let expectedCurrentRoundNumber = 1;
     assert.equal((await incentives.getCurrentRound()).toString(), expectedCurrentRoundNumber.toString());
