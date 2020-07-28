@@ -1,4 +1,5 @@
 const { contract } = require('@openzeppelin/test-environment');
+const { time } = require('@openzeppelin/test-helpers');
 const MasterMock = contract.fromArtifact('MasterMock');
 const PooledStakingMock = contract.fromArtifact('PooledStakingMock');
 const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncentives');
@@ -10,16 +11,21 @@ const { hex } = require('./utils');
 async function setup () {
 
   const roundDuration = 7 * 24 * 60 * 60;
-  const now = Math.floor(Date.now() / 1000);
+  const roundsStartTimeSecondsUntilStart = 10;
+
+  const latest = (await time.latest()).toNumber();
+  const roundsStartTime = latest + roundsStartTimeSecondsUntilStart;
 
   const master = await MasterMock.new();
   const pooledStaking = await PooledStakingMock.new();
-  const incentives = await CommunityStakingIncentives.new(roundDuration, now, master.address);
+  const incentives = await CommunityStakingIncentives.new(roundDuration, roundsStartTime, master.address);
   const mockTokenA = await MockTokenA.new();
   const mockTokenB = await MockTokenB.new();
   const mockTokenC = await MockTokenC.new();
 
   master.setLatestAddress(hex('PS'), pooledStaking.address);
+
+  await time.increase(roundsStartTimeSecondsUntilStart);
 
   this.master = master;
   this.pooledStaking = pooledStaking;
@@ -28,7 +34,7 @@ async function setup () {
   this.mockTokenB = mockTokenB;
   this.mockTokenC = mockTokenC;
   this.roundDuration = roundDuration;
-  this.startTime = now;
+  this.startTime = roundsStartTime;
 }
 
 module.exports = {

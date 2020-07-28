@@ -34,6 +34,8 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   uint public constant rewardRateScale = 1e18;
 
   constructor(uint _roundDuration, uint _roundsStartTime, address masterAddress) public {
+    require(_roundDuration > 0, "_roundDuration needs to be greater than 0");
+    require(_roundsStartTime >= now, "_roundsStartTime needs to be in the future");
     roundDuration = _roundDuration;
     roundsStartTime = _roundsStartTime;
     master = INXMMaster(masterAddress);
@@ -220,6 +222,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @dev Fetch the current round number.
   */
   function getCurrentRound() public view returns (uint) {
+    require(roundsStartTime <= now, "Rounds haven't started yet");
     return (now - roundsStartTime) / roundDuration + 1;
   }
 
