@@ -20,11 +20,15 @@ function getUniqueRewardTuples (events) {
   });
 }
 
-describe('claimReward', function () {
+describe('claimRewards', function () {
   this.timeout(5000);
 
   const [
     sponsor1,
+    sponsor2,
+    sponsor3,
+    sponsor4,
+    sponsor5,
     staker1,
   ] = accounts;
 
@@ -52,7 +56,7 @@ describe('claimReward', function () {
     const staker1Stake = ether('1');
     await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
 
-    const tx = await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
+    const tx = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
     });
     console.log(`claimReward gas used ${tx.receipt.gasUsed}`);
@@ -92,11 +96,11 @@ describe('claimReward', function () {
     const staker1Stake = ether('1');
     await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
 
-    await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
+    await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
     });
     await expectRevert(
-      incentives.claimReward(firstContract, sponsor, mockTokenA.address, { from: staker1 }),
+      incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], { from: staker1 }),
       'Already claimed this reward for this round',
     );
   });
@@ -124,7 +128,7 @@ describe('claimReward', function () {
       const staker1Stake = ether('1');
       await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
 
-      const tx = await incentives.claimReward(firstContract, sponsor, mockTokenA.address, {
+      const tx = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
         from: staker1,
       });
       const expectedRewardClaimedAmount = staker1Stake.mul(rewardRate).div(rewardRateScale);
@@ -144,20 +148,8 @@ describe('claimReward', function () {
       await time.increase(roundDuration);
     }
   });
-});
 
-describe('claimRewards', function () {
-  const [
-    sponsor1,
-    sponsor2,
-    sponsor3,
-    sponsor4,
-    sponsor5,
-    staker1,
-  ] = accounts;
-  beforeEach(setup);
-
-  it('should send reward funds to claiming staker and emit Rewarded event', async function () {
+  it('should send reward funds to claiming staker for multiple sponsors at the same time', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
@@ -197,7 +189,7 @@ describe('claimRewards', function () {
   });
 });
 
-describe('available sponsors and rewards flow', function () {
+describe('detecting all available sponsors from Deposited and claiming all available rewards', function () {
   const [
     sponsor1,
     sponsor2,

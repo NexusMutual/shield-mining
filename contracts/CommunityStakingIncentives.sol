@@ -72,41 +72,6 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   );
 
   /**
-  * @dev Claims reward as a NexusMutual staker.
-  * @param stakedContract contract the staker has a stake on.
-  * @param sponsor Sponsor providing the reward funds.
-  * @param tokenAddress address of the ERC20 token of the reward funds.
-  * @return rewardAmount amount rewarded
-  */
-  function claimReward(
-    address stakedContract,
-    address sponsor,
-    address tokenAddress
-  ) public nonReentrant returns (uint rewardAmount) {
-
-    uint currentRound = getCurrentRound();
-    uint lastRoundClaimed = rewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[msg.sender];
-    require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
-
-    IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
-    RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
-
-    rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract).mul(pool.rate).div(rewardRateScale);
-    uint rewardsAvailable = pool.amount;
-    if (rewardAmount > rewardsAvailable) {
-      rewardAmount = rewardsAvailable;
-    }
-    require(rewardAmount > 0, "rewardAmount needs to be greater than 0");
-
-    pool.lastRoundClaimed[msg.sender] = currentRound;
-    pool.amount = rewardsAvailable.sub(rewardAmount);
-
-    IERC20 erc20 = IERC20(tokenAddress);
-    erc20.safeTransfer(msg.sender, rewardAmount);
-    emit Claimed(stakedContract, sponsor, tokenAddress, rewardAmount, msg.sender, currentRound);
-  }
-
-  /**
   * @dev set the reward ratio as a sponsor for a particular contract and ERC20 token.
   * @param stakedContract Contract the staker has a stake on.
   * @param tokenAddress Address of the ERC20 token of the reward funds.
@@ -142,7 +107,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address[] calldata stakedContracts,
     address[] calldata sponsors,
     address[] calldata tokenAddresses
-  ) external returns (uint[] memory tokensRewarded) {
+  ) external nonReentrant returns (uint[] memory tokensRewarded) {
 
     require(stakedContracts.length == sponsors.length, "stakedContracts.length != sponsors.length");
     require(stakedContracts.length == tokenAddresses.length, "stakedContracts.length != tokenAddresses.length");
@@ -152,6 +117,41 @@ contract CommunityStakingIncentives is ReentrancyGuard {
       tokensRewarded[i] = claimReward(stakedContracts[i], sponsors[i], tokenAddresses[i]);
     }
     return tokensRewarded;
+  }
+
+  /**
+  * @dev Claims reward as a NexusMutual staker.
+  * @param stakedContract contract the staker has a stake on.
+  * @param sponsor Sponsor providing the reward funds.
+  * @param tokenAddress address of the ERC20 token of the reward funds.
+  * @return rewardAmount amount rewarded
+  */
+  function claimReward(
+    address stakedContract,
+    address sponsor,
+    address tokenAddress
+  ) internal returns (uint rewardAmount) {
+
+    uint currentRound = getCurrentRound();
+    uint lastRoundClaimed = rewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[msg.sender];
+    require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
+
+    IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
+    RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
+
+    rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract).mul(pool.rate).div(rewardRateScale);
+    uint rewardsAvailable = pool.amount;
+    if (rewardAmount > rewardsAvailable) {
+      rewardAmount = rewardsAvailable;
+    }
+    require(rewardAmount > 0, "rewardAmount needs to be greater than 0");
+
+    pool.lastRoundClaimed[msg.sender] = currentRound;
+    pool.amount = rewardsAvailable.sub(rewardAmount);
+
+    IERC20 erc20 = IERC20(tokenAddress);
+    erc20.safeTransfer(msg.sender, rewardAmount);
+    emit Claimed(stakedContract, sponsor, tokenAddress, rewardAmount, msg.sender, currentRound);
   }
 
   /**
