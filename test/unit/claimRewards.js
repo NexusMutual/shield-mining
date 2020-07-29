@@ -21,7 +21,7 @@ function getUniqueRewardTuples (events) {
 }
 
 describe('claimRewards', function () {
-  this.timeout(100000);
+  this.timeout(5000);
 
   const [
     sponsor1,
