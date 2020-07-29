@@ -3,9 +3,7 @@ const { time } = require('@openzeppelin/test-helpers');
 const MasterMock = contract.fromArtifact('MasterMock');
 const PooledStakingMock = contract.fromArtifact('PooledStakingMock');
 const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncentives');
-const MockTokenA = contract.fromArtifact('MockTokenA');
-const MockTokenB = contract.fromArtifact('MockTokenB');
-const MockTokenC = contract.fromArtifact('MockTokenC');
+const MintableERC20 = contract.fromArtifact('MintableERC20');
 const { hex } = require('./utils');
 
 async function setup () {
@@ -19,9 +17,9 @@ async function setup () {
   const master = await MasterMock.new();
   const pooledStaking = await PooledStakingMock.new();
   const incentives = await CommunityStakingIncentives.new(roundDuration, roundsStartTime, master.address);
-  const mockTokenA = await MockTokenA.new();
-  const mockTokenB = await MockTokenB.new();
-  const mockTokenC = await MockTokenC.new();
+  const mockTokenA = await MintableERC20.new('MockTokenA', 'MTA');
+  const mockTokenB = await MintableERC20.new('MockTokenA', 'MTA');
+  const mockTokenC = await MintableERC20.new('MockTokenA', 'MTA');
 
   master.setLatestAddress(hex('PS'), pooledStaking.address);
   await time.increase(roundsStartTimeSecondsUntilStart);

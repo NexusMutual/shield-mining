@@ -20,7 +20,7 @@ function getUniqueRewardTuples (events) {
   });
 }
 
-describe.only('claimRewards', function () {
+describe('claimRewards', function () {
   this.timeout(5000);
 
   const [
