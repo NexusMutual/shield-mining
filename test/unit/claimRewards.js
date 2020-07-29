@@ -21,7 +21,7 @@ function getUniqueRewardTuples (events) {
 }
 
 describe('claimRewards', function () {
-  this.timeout(5000);
+  this.timeout(100000);
 
   const [
     sponsor1,
@@ -58,6 +58,9 @@ describe('claimRewards', function () {
     const staker1NetStake = staker1Stake.sub(staker1PendingUnstake);
     await pooledStaking.setStakerContractStake(staker1, firstContract, staker1NetStake);
 
+    const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
+      from: staker1,
+    });
     const tx = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
     });
@@ -70,6 +73,8 @@ describe('claimRewards', function () {
       receiver: staker1,
       roundNumber: '1',
     });
+    assert.equal(tokensClaimed.length, 1);
+    assert.equal(tokensClaimed[0].toString(), expectedRewardClaimedAmount.toString());
 
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
@@ -133,6 +138,9 @@ describe('claimRewards', function () {
       const staker1NetStake = staker1Stake.sub(staker1PendingUnstake);
       await pooledStaking.setStakerContractStake(staker1, firstContract, staker1NetStake);
 
+      const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
+        from: staker1,
+      });
       const tx = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
         from: staker1,
       });
@@ -146,6 +154,8 @@ describe('claimRewards', function () {
         receiver: staker1,
         roundNumber: expectedRoundNumber,
       });
+      assert.equal(tokensClaimed.length, 1);
+      assert.equal(tokensClaimed[0].toString(), expectedRewardClaimedAmount.toString());
       const lastRoundClaimed = await incentives.getLastRoundClaimed(firstContract, sponsor, mockTokenA.address, staker1);
       assert.equal(lastRoundClaimed.toString(), expectedRoundNumber.toString());
 
@@ -186,12 +196,17 @@ describe('claimRewards', function () {
     const stakedContracts = new Array(sponsors.length).fill(firstContract);
     const tokenAddresses = new Array(sponsors.length).fill(mockTokenA.address);
 
-    const tx = await incentives.claimRewards(stakedContracts, sponsors, tokenAddresses, {
+    const tokensClaimed = await incentives.claimRewards.call(stakedContracts, sponsors, tokenAddresses, {
       from: staker1,
     });
+    await incentives.claimRewards(stakedContracts, sponsors, tokenAddresses, {
+      from: staker1,
+    });
+    const totalClaimed = tokensClaimed.reduce((a, b) => a.add(b), new BN('0'));
     const expectedRewardClaimedAmount = staker1NetStake.mul(rewardRate).div(rewardRateScale).muln(sponsors.length);
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
+    assert.equal(totalClaimed.toString(), expectedRewardClaimedAmount.toString());
   });
 });
 
