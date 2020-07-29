@@ -200,8 +200,9 @@ contract CommunityStakingIncentives is ReentrancyGuard {
       return 0;
     }
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
-    uint netStake = pooledStaking.stakerContractStake(staker, stakedContract)
-      .sub(pooledStaking.stakerContractPendingUnstakeTotal(staker, stakedContract));
+    uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
+    uint pendingUnstake = pooledStaking.stakerContractPendingUnstakeTotal(staker, stakedContract);
+    uint netStake = stake >= pendingUnstake ? stake.sub(pendingUnstake) : 0;
     rewardAmount = netStake.mul(pool.rate).div(rewardRateScale);
     uint rewardsAvailable = pool.amount;
     if (rewardAmount > rewardsAvailable) {
