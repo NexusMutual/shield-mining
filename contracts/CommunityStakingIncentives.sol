@@ -86,7 +86,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param rate Rate between the NXM stake and the reward amount. (Scaled by 1e18)
   */
-  function setRewardRate(address stakedContract, address tokenAddress, uint rate) external {
+  function setRewardRate(address stakedContract, address tokenAddress, uint rate) public {
     rewardPools[stakedContract][msg.sender][tokenAddress].rate = rate;
   }
 
@@ -96,13 +96,25 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param amount Amount of rewards to be deposited.
   */
-  function depositRewards(address stakedContract, address tokenAddress, uint amount) external {
+  function depositRewards(address stakedContract, address tokenAddress, uint amount) public {
 
     IERC20 erc20 = IERC20(tokenAddress);
     erc20.safeTransferFrom(msg.sender, address(this), amount);
     RewardPool storage pool = rewardPools[stakedContract][msg.sender][tokenAddress];
     pool.amount = pool.amount.add(amount);
     emit Deposited(stakedContract, msg.sender, tokenAddress, amount);
+  }
+
+  /**
+  * @dev Add rewards as a sponsor for a particular contract.
+  * @param stakedContract Contract the staker has a stake on.
+  * @param tokenAddress Address of the ERC20 token of the reward funds.
+  * @param amount Amount of rewards to be deposited.
+  * @param rate Rate between the NXM stake and the reward amount. (Scaled by 1e18)
+  */
+  function depositRewardsAndSetRate(address stakedContract, address tokenAddress, uint amount, uint rate) external {
+    depositRewards(stakedContract, tokenAddress, amount);
+    setRewardRate(stakedContract, tokenAddress, rate);
   }
 
   /**

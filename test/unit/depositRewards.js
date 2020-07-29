@@ -160,3 +160,37 @@ describe('depositRewards', function () {
     );
   });
 });
+
+describe('depositRewardsAndSetRate', function () {
+
+  this.timeout(5000);
+  const [
+    sponsor1,
+  ] = accounts;
+
+  beforeEach(setup);
+  it('should update the reward funds of a sponsor, transfer tokens to contract, and emit Deposited event, and change rate',
+    async function () {
+      const { incentives, mockTokenA } = this;
+
+      await mockTokenA.mint(sponsor1, ether('100'));
+
+      const totalRewards = ether('1');
+      await mockTokenA.approve(incentives.address, totalRewards, {
+        from: sponsor1,
+      });
+      const rewardRate = new BN('1e8');
+      const tx = await incentives.depositRewardsAndSetRate(firstContract, mockTokenA.address, totalRewards, rewardRate, {
+        from: sponsor1,
+      });
+      await expectEvent(tx, 'Deposited', {
+        stakedContract: firstContract,
+        sponsor: sponsor1,
+        tokenAddress: mockTokenA.address,
+        amount: totalRewards,
+      });
+
+      const { rate } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+      assert.equal(rate.toString(), rewardRate.toString());
+    });
+});
