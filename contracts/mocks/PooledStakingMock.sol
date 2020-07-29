@@ -20,6 +20,7 @@ pragma solidity ^0.6.10;
 contract PooledStakingMock {
 
   mapping(address => mapping(address => uint)) stakerContractStakes;
+  mapping(address => mapping(address => uint)) stakerContractPendingUnstakeTotals;
 
   mapping (address => address[]) stakerContracts;
 
@@ -36,5 +37,13 @@ contract PooledStakingMock {
 
   function stakerContractStake(address staker, address contractAddress) external view returns (uint) {
     return stakerContractStakes[staker][contractAddress];
+  }
+
+  function stakerContractPendingUnstakeTotal(address staker, address contractAddress) external view returns (uint) {
+    return stakerContractPendingUnstakeTotals[staker][contractAddress];
+  }
+
+  function setStakerContractPendingUnstakeTotal(address staker, address contractAddress, uint unstakeTotal) external  {
+    stakerContractPendingUnstakeTotals[staker][contractAddress] = unstakeTotal;
   }
 }
