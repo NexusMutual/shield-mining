@@ -6,6 +6,7 @@ const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncent
 const BN = web3.utils.BN;
 
 const firstContract = '0x0000000000000000000000000000000000000001';
+const secondContract = '0x0000000000000000000000000000000000000002';
 const rewardRateScale = new BN('10').pow(new BN('18'));
 
 function getUniqueRewardTuples (events) {
@@ -164,27 +165,53 @@ describe('claimRewards', function () {
     }
   });
 
-  it('should send reward funds to claiming staker for multiple sponsors at the same time', async function () {
-    const { incentives, mockTokenA, pooledStaking } = this;
-
+  it.only('should send reward funds to claiming staker for multiple sponsors at the same time', async function () {
+    const { incentives, mockTokenA, mockTokenB, mockTokenC, pooledStaking } = this;
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
 
+    const testRewardPools = [{
+      sponsor: sponsor1,
+      token: mockTokenA,
+      rewardRate: rewardRateScale,
+    }, {
+      sponsor: sponsor2,
+      token: mockTokenA,
+      rewardRate: rewardRateScale.muln(2),
+    }, {
+      sponsor: sponsor3,
+      token: mockTokenB,
+      rewardRate: rewardRateScale.muln(3),
+    }, {
+      sponsor: sponsor4,
+      token: mockTokenB,
+      rewardRate: rewardRateScale.muln(4),
+    },{
+      sponsor: sponsor5,
+      token: mockTokenC,
+      rewardRate: rewardRateScale.muln(5),
+    }];
+
+    const tokens = testRewardPools.map(pool => pool.token);
+    const tokensByAddress = {};
+    for (let token of tokens) {
+      tokensByAddress[token.address] = token;
+    }
+
     const baseRewardFund = ether('10');
-    const rewardRate = rewardRateScale;
     let multiplier = 1;
     const rewardFunds = [];
-    for (const sponsor of sponsors) {
-      await mockTokenA.mint(sponsor, ether('100'));
+    for (const testRewardPool of testRewardPools) {
+      await testRewardPool.token.mint(testRewardPool.sponsor, ether('100'));
       const totalRewards = baseRewardFund.muln(multiplier++);
       rewardFunds.push(totalRewards);
-      await mockTokenA.approve(incentives.address, totalRewards, {
-        from: sponsor,
+      await testRewardPool.token.approve(incentives.address, totalRewards, {
+        from: testRewardPool.sponsor,
       });
-      await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
-        from: sponsor,
+      await incentives.depositRewards(firstContract, testRewardPool.token.address, totalRewards, {
+        from: testRewardPool.sponsor,
       });
-      await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRate, {
-        from: sponsor,
+      await incentives.setRewardRate(firstContract, testRewardPool.token.address, testRewardPool.rewardRate, {
+        from: testRewardPool.sponsor,
       });
     }
 
@@ -194,7 +221,7 @@ describe('claimRewards', function () {
     await pooledStaking.setStakerContractStake(staker1, firstContract, staker1NetStake);
 
     const stakedContracts = new Array(sponsors.length).fill(firstContract);
-    const tokenAddresses = new Array(sponsors.length).fill(mockTokenA.address);
+    const tokenAddresses = tokens.map(token => token.address);
 
     const tokensClaimed = await incentives.claimRewards.call(stakedContracts, sponsors, tokenAddresses, {
       from: staker1,
@@ -202,11 +229,30 @@ describe('claimRewards', function () {
     await incentives.claimRewards(stakedContracts, sponsors, tokenAddresses, {
       from: staker1,
     });
-    const totalClaimed = tokensClaimed.reduce((a, b) => a.add(b), new BN('0'));
-    const expectedRewardClaimedAmount = staker1NetStake.mul(rewardRate).div(rewardRateScale).muln(sponsors.length);
-    const postRewardBalance = await mockTokenA.balanceOf(staker1);
-    assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
-    assert.equal(totalClaimed.toString(), expectedRewardClaimedAmount.toString());
+
+    assert.equal(tokensClaimed.length, testRewardPools.length);
+    const expectedClaimAmounts = testRewardPools.map(pool => staker1NetStake.mul(pool.rewardRate).div(rewardRateScale));
+    console.log(tokensClaimed.map(t => t.toString()));
+    for (let i = 0; i < tokensClaimed.length; i++) {
+      const claimAmount = tokensClaimed[i];
+      assert.equal(claimAmount.toString(), expectedClaimAmounts[i].toString(), `claimAmount does not match for test pool ${i}`);
+    }
+
+    const expectedClaimAmountsByTokenAddress = {};
+    for (let i = 0; i < tokenAddresses.length; i++) {
+      const address = tokenAddresses[i];
+      if (!expectedClaimAmountsByTokenAddress[address]) {
+        expectedClaimAmountsByTokenAddress[address] = new BN('0');
+      }
+      expectedClaimAmountsByTokenAddress[address] = expectedClaimAmountsByTokenAddress[address].add(tokensClaimed[i]);
+    }
+
+    for (const tokenAddress of Object.keys(expectedClaimAmountsByTokenAddress)) {
+      const expectedBalance = expectedClaimAmountsByTokenAddress[tokenAddress];
+      const postRewardBalance = await tokensByAddress[tokenAddress].balanceOf(staker1);
+      const name = await tokensByAddress[tokenAddress].name();
+      assert.equal(postRewardBalance.toString(), expectedBalance.toString(), `Reward balance does not match for token ${name}`);
+    }
   });
 });
 
