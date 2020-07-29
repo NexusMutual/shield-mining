@@ -26,8 +26,8 @@ describe('withdrawRewards', function () {
       from: sponsor1,
     });
 
-    const rewardsToRetract = totalRewards.divn(2);
-    const tx = await incentives.withdrawRewards(firstContract, mockTokenA.address, rewardsToRetract, {
+    const rewardsToWithdraw = totalRewards.divn(2);
+    const tx = await incentives.withdrawRewards(firstContract, mockTokenA.address, rewardsToWithdraw, {
       from: sponsor1,
     });
 
@@ -35,19 +35,19 @@ describe('withdrawRewards', function () {
       stakedContract: firstContract,
       sponsor: sponsor1,
       tokenAddress: mockTokenA.address,
-      amount: rewardsToRetract.toString(),
+      amount: rewardsToWithdraw.toString(),
     });
 
-    const expectedRewardsLeft = totalRewards.sub(rewardsToRetract);
+    const expectedRewardsLeft = totalRewards.sub(rewardsToWithdraw);
     const { amount: storedAmount } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(storedAmount.toString(), expectedRewardsLeft.toString());
 
-    const postRetractionIncentivesBalance = await mockTokenA.balanceOf(incentives.address);
-    assert.equal(postRetractionIncentivesBalance.toString(), expectedRewardsLeft);
+    const postWithdrawalIncentivesBalance = await mockTokenA.balanceOf(incentives.address);
+    assert.equal(postWithdrawalIncentivesBalance.toString(), expectedRewardsLeft);
 
-    const postRetractionSponsorBalance = await mockTokenA.balanceOf(sponsor1);
+    const postWithdrawalSponsorBalance = await mockTokenA.balanceOf(sponsor1);
     const newExpectedSponsorBalance = issued.sub(expectedRewardsLeft);
-    assert.equal(postRetractionSponsorBalance.toString(), newExpectedSponsorBalance.toString());
+    assert.equal(postWithdrawalSponsorBalance.toString(), newExpectedSponsorBalance.toString());
   });
 
   it('should update the reward funds of a sponsor, transfer funds when all funds are withdrawn', async function () {
@@ -75,10 +75,10 @@ describe('withdrawRewards', function () {
     });
     const { amount: storedAmount } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(storedAmount.toString(), '0');
-    const postRetractionIncentivesBalance = await mockTokenA.balanceOf(incentives.address);
-    assert.equal(postRetractionIncentivesBalance.toString(), '0');
-    const postRetractionSponsorBalance = await mockTokenA.balanceOf(sponsor1);
-    assert.equal(postRetractionSponsorBalance.toString(), issued.toString());
+    const postWithdrawalIncentivesBalance = await mockTokenA.balanceOf(incentives.address);
+    assert.equal(postWithdrawalIncentivesBalance.toString(), '0');
+    const postWithdrawalSponsorBalance = await mockTokenA.balanceOf(sponsor1);
+    assert.equal(postWithdrawalSponsorBalance.toString(), issued.toString());
   });
 
   it('should revert when requested amount is higher than available funds', async function () {
@@ -94,9 +94,9 @@ describe('withdrawRewards', function () {
       from: sponsor1,
     });
 
-    const rewardsToRetract = totalRewards.addn(2);
+    const rewardsToWithdraw = totalRewards.addn(2);
     await expectRevert(
-      incentives.withdrawRewards(firstContract, mockTokenA.address, rewardsToRetract, { from: sponsor1 }),
+      incentives.withdrawRewards(firstContract, mockTokenA.address, rewardsToWithdraw, { from: sponsor1 }),
       'Not enough tokens to withdraw',
     );
   });

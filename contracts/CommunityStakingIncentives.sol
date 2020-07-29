@@ -163,10 +163,10 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   /**
-  * @dev Retract reward funds as a Sponsor for a particular risk.
+  * @dev Withdraw reward funds as a Sponsor for a particular risk.
   * @param stakedContract Contract the staker has a stake on.
   * @param tokenAddress Address of the ERC20 token of the reward funds.
-  * @param amount Amount of reward funds to be retracted.
+  * @param amount Amount of reward funds to be withdrawn.
   */
   function withdrawRewards(address stakedContract, address tokenAddress, uint amount) external nonReentrant {
     IERC20 erc20 = IERC20(tokenAddress);
