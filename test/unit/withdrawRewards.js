@@ -16,8 +16,8 @@ describe('withdrawRewards', function () {
   it('should update the reward funds of a sponsor. transfer the the funds, and emit Withdrawn event', async function () {
     const { incentives, mockTokenA } = this;
 
-    const issued = ether('100');
-    await mockTokenA.issue(sponsor1, issued);
+    const minted = ether('100');
+    await mockTokenA.mint(sponsor1, minted);
     const totalRewards = ether('1');
     await mockTokenA.approve(incentives.address, totalRewards, {
       from: sponsor1,
@@ -46,15 +46,15 @@ describe('withdrawRewards', function () {
     assert.equal(postWithdrawalIncentivesBalance.toString(), expectedRewardsLeft);
 
     const postWithdrawalSponsorBalance = await mockTokenA.balanceOf(sponsor1);
-    const newExpectedSponsorBalance = issued.sub(expectedRewardsLeft);
+    const newExpectedSponsorBalance = minted.sub(expectedRewardsLeft);
     assert.equal(postWithdrawalSponsorBalance.toString(), newExpectedSponsorBalance.toString());
   });
 
   it('should update the reward funds of a sponsor, transfer funds when all funds are withdrawn', async function () {
     const { incentives, mockTokenA } = this;
 
-    const issued = ether('100');
-    await mockTokenA.issue(sponsor1, issued);
+    const minted = ether('100');
+    await mockTokenA.mint(sponsor1, minted);
     const totalRewards = ether('1');
     await mockTokenA.approve(incentives.address, totalRewards, {
       from: sponsor1,
@@ -78,14 +78,14 @@ describe('withdrawRewards', function () {
     const postWithdrawalIncentivesBalance = await mockTokenA.balanceOf(incentives.address);
     assert.equal(postWithdrawalIncentivesBalance.toString(), '0');
     const postWithdrawalSponsorBalance = await mockTokenA.balanceOf(sponsor1);
-    assert.equal(postWithdrawalSponsorBalance.toString(), issued.toString());
+    assert.equal(postWithdrawalSponsorBalance.toString(), minted.toString());
   });
 
   it('should revert when requested amount is higher than available funds', async function () {
     const { incentives, mockTokenA } = this;
 
-    const issued = ether('100');
-    await mockTokenA.issue(sponsor1, issued);
+    const minted = ether('100');
+    await mockTokenA.mint(sponsor1, minted);
     const totalRewards = ether('1');
     await mockTokenA.approve(incentives.address, totalRewards, {
       from: sponsor1,
@@ -103,8 +103,8 @@ describe('withdrawRewards', function () {
 
   it('should revert when the token address does not exist', async function () {
     const { incentives, mockTokenA } = this;
-    const issued = ether('100');
-    await mockTokenA.issue(sponsor1, issued);
+    const minted = ether('100');
+    await mockTokenA.mint(sponsor1, minted);
     const totalRewards = ether('1');
     await mockTokenA.approve(incentives.address, totalRewards, {
       from: sponsor1,

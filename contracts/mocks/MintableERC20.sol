@@ -24,7 +24,7 @@ contract MintableERC20 is ERC20 {
   constructor (string memory name, string memory symbol) public ERC20(name, symbol) {
   }
 
-  function issue(address account, uint256 amount) external {
+  function mint(address account, uint256 amount) external {
     _mint(account, amount);
   }
 }

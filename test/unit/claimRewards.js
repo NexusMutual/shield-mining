@@ -39,7 +39,7 @@ describe('claimRewards', function () {
 
     const sponsor = sponsor1;
 
-    await mockTokenA.issue(sponsor, ether('100'));
+    await mockTokenA.mint(sponsor, ether('100'));
 
     const totalRewards = ether('10');
     await mockTokenA.approve(incentives.address, totalRewards, {
@@ -80,7 +80,7 @@ describe('claimRewards', function () {
 
     const sponsor = sponsor1;
 
-    await mockTokenA.issue(sponsor, ether('100'));
+    await mockTokenA.mint(sponsor, ether('100'));
 
     const totalRewards = ether('10');
     await mockTokenA.approve(incentives.address, totalRewards, {
@@ -112,7 +112,7 @@ describe('claimRewards', function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsor = sponsor1;
-    await mockTokenA.issue(sponsor, ether('100'));
+    await mockTokenA.mint(sponsor, ether('100'));
     const totalRewards = ether('10');
 
     const roundCount = 5;
@@ -164,7 +164,7 @@ describe('claimRewards', function () {
     let multiplier = 1;
     const rewardFunds = [];
     for (const sponsor of sponsors) {
-      await mockTokenA.issue(sponsor, ether('100'));
+      await mockTokenA.mint(sponsor, ether('100'));
       const totalRewards = baseRewardFund.muln(multiplier++);
       rewardFunds.push(totalRewards);
       await mockTokenA.approve(incentives.address, totalRewards, {
@@ -245,7 +245,7 @@ describe('detecting all available sponsors from Deposited and claiming all avail
     const rewardRates = {};
     const rewardFunds = [];
     for (const sponsor of sponsors) {
-      await mockTokenA.issue(sponsor, ether('100'));
+      await mockTokenA.mint(sponsor, ether('100'));
       rewardRate = rewardRateScale.muln(multiplier);
       const totalRewards = baseRewardFund.muln(multiplier++);
       rewardFunds.push(totalRewards);

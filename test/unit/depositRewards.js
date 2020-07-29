@@ -23,7 +23,7 @@ describe('depositRewards', function () {
   it('should update the reward funds of a sponsor, transfer tokens to contract, and emit Deposited event', async function () {
     const { incentives, mockTokenA } = this;
 
-    await mockTokenA.issue(sponsor1, ether('100'));
+    await mockTokenA.mint(sponsor1, ether('100'));
 
     const totalRewards = ether('1');
     await mockTokenA.approve(incentives.address, totalRewards, {
@@ -51,7 +51,7 @@ describe('depositRewards', function () {
 
     const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
     for (const sponsor of sponsors) {
-      await mockTokenA.issue(sponsor, ether('100'));
+      await mockTokenA.mint(sponsor, ether('100'));
     }
     const baseRewards = ether('1');
 
@@ -87,7 +87,7 @@ describe('depositRewards', function () {
       const tokens = [mockTokenA, mockTokenB, mockTokenC];
       for (const sponsor of sponsors) {
         for (const token of tokens) {
-          await token.issue(sponsor, ether('100'));
+          await token.mint(sponsor, ether('100'));
         }
       }
       const baseRewards = ether('1');
@@ -133,10 +133,10 @@ describe('depositRewards', function () {
   it('should revert when sponsor does not have enough funds', async function () {
     const { incentives, mockTokenA } = this;
 
-    const issued = ether('1');
-    await mockTokenA.issue(sponsor1, issued);
-    const desiredRewards = issued.addn(1);
-    await mockTokenA.approve(incentives.address, issued, {
+    const minted = ether('1');
+    await mockTokenA.mint(sponsor1, minted);
+    const desiredRewards = minted.addn(1);
+    await mockTokenA.approve(incentives.address, minted, {
       from: sponsor1,
     });
     await expectRevert(
@@ -148,14 +148,14 @@ describe('depositRewards', function () {
   it('should revert when the token address does not exist', async function () {
     const { incentives, mockTokenA } = this;
 
-    const issued = ether('1');
-    await mockTokenA.issue(sponsor1, issued);
-    await mockTokenA.approve(incentives.address, issued, {
+    const minted = ether('1');
+    await mockTokenA.mint(sponsor1, minted);
+    await mockTokenA.approve(incentives.address, minted, {
       from: sponsor1,
     });
     const nonExistantToken = '0x0000000000000000000000000000000000000666';
     await expectRevert(
-      incentives.depositRewards(firstContract, nonExistantToken, issued, { from: sponsor1 }),
+      incentives.depositRewards(firstContract, nonExistantToken, minted, { from: sponsor1 }),
       'revert',
     );
   });
