@@ -125,7 +125,6 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     for (uint i = 0; i < stakedContracts.length; i++) {
       tokensRewarded[i] = claimReward(stakedContracts[i], sponsors[i], tokenAddresses[i]);
     }
-    return tokensRewarded;
   }
 
   /**
