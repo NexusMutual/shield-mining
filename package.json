@@ -5,7 +5,12 @@
   "main": "networks.js",
   "scripts": {
     "compile": "oz compile",
-    "test": "mocha --exit test"
+    "compile-nxm": "(cd nexusmutual-contracts && npx truffle compile)",
+    "compile-all": "npm run compile && npm run compile-nxm && npm run nxm-copy-artifacts",
+    "nxm-copy-artifacts": "cp nexusmutual-contracts/build/contracts/*.json build/contracts/",
+    "test-integration": "mocha --exit test/integration",
+    "test-unit": "mocha --exit test/integration",
+    "test": "mocha --exit test/"
   },
   "author": "",
   "license": "ISC",

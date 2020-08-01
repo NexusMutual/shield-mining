@@ -4,7 +4,7 @@ const MasterMock = contract.fromArtifact('MasterMock');
 const PooledStakingMock = contract.fromArtifact('PooledStakingMock');
 const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncentives');
 const MintableERC20 = contract.fromArtifact('MintableERC20');
-const { hex } = require('./utils');
+const { hex } = require('../utils');
 
 async function setup () {
 
