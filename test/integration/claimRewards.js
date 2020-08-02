@@ -4,8 +4,8 @@ const { exec } = require('child_process');
 const { assert } = require('chai');
 require('chai').should();
 
-const { getQuoteValues, getValue } = require('./external');
-const { hex, sleep } = require('../utils');
+const { getValue } = require('./external');
+const { hex } = require('../utils');
 const setup = require('./setup');
 
 const BN = web3.utils.BN;
@@ -13,11 +13,7 @@ const fee = ether('0.002');
 const LOCK_REASON_CLAIM = hex('CLA');
 const rewardRateScale = new BN('10').pow(new BN('18'));
 
-function coverToCoverDetailsArray (cover) {
-  return [cover.amount, cover.price, cover.priceNXM, cover.expireTime, cover.generationTime];
-}
-
-describe('burns', function () {
+describe('claimRewards', function () {
 
   this.timeout(10000000);
   const owner = defaultSender;
@@ -70,96 +66,14 @@ describe('burns', function () {
       await tk.transfer(member, initialMemberFunds);
     }
 
-    const maxVotingTime = await cd.maxVotingTime();
-
     for (const member of members) {
       await tc.lock(LOCK_REASON_CLAIM, tokensLockedForVoting, validity, {
         from: member,
       });
     }
-
-    this.allMembers = members;
-
-    const currency = hex('ETH');
-    const tokenPrice = await mcr.calculateTokenPrice(currency);
   }
 
-  async function buyCover (cover, coverHolder) {
-    const { qt, p1 } = this;
-    const vrsData = await getQuoteValues(
-      coverToCoverDetailsArray(cover),
-      cover.currency,
-      cover.period,
-      cover.contractAddress,
-      qt.address,
-    );
-    await p1.makeCoverBegin(
-      cover.contractAddress,
-      cover.currency,
-      coverToCoverDetailsArray(cover),
-      cover.period,
-      vrsData[0],
-      vrsData[1],
-      vrsData[2],
-      { from: coverHolder, value: cover.price },
-    );
-  }
-
-  async function submitMemberVotes (voteValue, maxVotingMembers) {
-    const { cd, td, cl } = this;
-    const claimId = (await cd.actualClaimLength()) - 1;
-
-    const initialCAVoteTokens = await cd.getCaClaimVotesToken(claimId);
-
-    const baseMembers = [member1, member2, member3];
-    const voters = maxVotingMembers ? baseMembers.slice(0, maxVotingMembers) : baseMembers;
-
-    for (const member of voters) {
-      await cl.submitCAVote(claimId, voteValue, { from: member });
-    }
-
-    const finalCAVoteTokens = await cd.getCaClaimVotesToken(claimId);
-    const actualVoteTokensDiff = finalCAVoteTokens[1] - initialCAVoteTokens[1];
-    const expectedVoteTokensDiff = tokensLockedForVoting * voters.length;
-    actualVoteTokensDiff.should.be.equal(expectedVoteTokensDiff);
-
-    const allVotes = await cd.getAllVotesForClaim(claimId);
-    const expectedVotes = allVotes[1].length;
-    expectedVotes.should.be.equal(voters.length);
-
-    const isBooked = await td.isCATokensBooked(member1);
-    isBooked.should.be.equal(true);
-  }
-
-  async function concludeClaimWithOraclize (now, expectedClaimStatusNumber) {
-    const { cl, pd, cd, p1 } = this;
-
-    const claimId = (await cd.actualClaimLength()) - 1;
-
-    const minVotingTime = await cd.minVotingTime();
-    const minTime = new BN(minVotingTime.toString()).add(
-      new BN(now.toString()),
-    );
-
-    await time.increaseTo(
-      new BN(minTime.toString()).add(new BN('2')),
-    );
-
-    (await cl.checkVoteClosing(claimId))
-      .toString()
-      .should.be.equal('1');
-
-    const APIID = await pd.allAPIcall((await pd.getApilCallLength()) - 1);
-    await p1.__callback(APIID, '');
-    const newCStatus = await cd.getClaimStatusNumber(claimId);
-    newCStatus[1].toString().should.be.equal(expectedClaimStatusNumber);
-
-    (await cl.checkVoteClosing(claimId))
-      .toString()
-      .should.be.equal('-1');
-  }
-
-  describe('claim is accepted for contract whose staker that staked on multiple contracts', function () {
+  describe('staker has positive stake and makes an unstake in the second round', function () {
 
     before(setup);
     before(initMembers);

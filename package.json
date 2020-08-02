@@ -9,7 +9,7 @@
     "compile-all": "npm run compile && npm run compile-nxm && npm run nxm-copy-artifacts",
     "nxm-copy-artifacts": "cp nexusmutual-contracts/build/contracts/*.json build/contracts/",
     "test-integration": "mocha --exit test/integration",
-    "test-unit": "mocha --exit test/integration",
+    "test-unit": "mocha --exit test/unit",
     "test": "mocha --exit test/"
   },
   "author": "",
