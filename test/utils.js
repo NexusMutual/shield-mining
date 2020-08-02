@@ -3,5 +3,5 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 module.exports = {
   hex,
-  sleep
+  sleep,
 };

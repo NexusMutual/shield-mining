@@ -158,7 +158,10 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
-    rewardAmount = pooledStaking.stakerContractStake(msg.sender, stakedContract).mul(pool.rate).div(rewardRateScale);
+    uint stake = pooledStaking.stakerContractStake(msg.sender, stakedContract);
+    uint pendingUnstake = pooledStaking.stakerContractPendingUnstakeTotal(msg.sender, stakedContract);
+    uint netStake = stake >= pendingUnstake ? stake.sub(pendingUnstake) : 0;
+    rewardAmount = netStake.mul(pool.rate).div(rewardRateScale);
     uint rewardsAvailable = pool.amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;

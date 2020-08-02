@@ -174,7 +174,6 @@ async function setup () {
 
   await proxies.mr.addInitialABMembers([owner]);
 
-
   const roundsStartTimeSecondsUntilStart = 10;
   const latest = (await time.latest()).toNumber();
   const roundsStartTime = latest + roundsStartTimeSecondsUntilStart;
@@ -189,7 +188,7 @@ async function setup () {
     ...instances,
     ...proxies,
     incentives,
-    mockTokenA
+    mockTokenA,
   });
 }
 

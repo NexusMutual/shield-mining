@@ -186,11 +186,11 @@ describe('burns', function () {
 
     it('sets up the arena', async function () {
 
-      const {ps, tk, incentives, mockTokenA } = this;
+      const { ps, tk, incentives, mockTokenA } = this;
 
-      await mockTokenA.mint(sponsor1, ether('100'));
+      await mockTokenA.mint(sponsor1, ether('1000'));
 
-      const totalRewards = ether('100');
+      const totalRewards = ether('1000');
       await mockTokenA.approve(incentives.address, totalRewards, {
         from: sponsor1,
       });
@@ -201,18 +201,18 @@ describe('burns', function () {
         from: sponsor1,
       });
 
-      await tk.approve(ps.address, stakeTokens, {from: staker1});
+      await tk.approve(ps.address, stakeTokens, { from: staker1 });
       await ps.depositAndStake(
-        stakeTokens, [cover.contractAddress, secondCoveredAddress], [stakeTokens, stakeTokens], {from: staker1},
+        stakeTokens, [cover.contractAddress, secondCoveredAddress], [stakeTokens, stakeTokens], { from: staker1 },
       );
     });
 
     it('allows staker to claim rewards proportionate to the stake', async function () {
       const { incentives, mockTokenA, ps } = this;
       await expectRevert(incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
-        from: staker1
+        from: staker1,
       }),
-        'Rounds haven\'t started yet');
+      'Rounds haven\'t started yet');
     });
 
     it('allows staker to claim rewards proportionate to the stake while no unstakes pending', async function () {
@@ -220,8 +220,8 @@ describe('burns', function () {
 
       await time.increase(10);
       await incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
-          from: staker1
-        });
+        from: staker1,
+      });
 
       const currentStake = await ps.stakerContractStake(staker1, cover.contractAddress);
       const expectedRewardAmount = currentStake.mul(rewardRate).div(rewardRateScale);
@@ -241,10 +241,12 @@ describe('burns', function () {
 
       const rewardTokenBalancePreClaim = await mockTokenA.balanceOf(staker1);
       await incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
-        from: staker1
+        from: staker1,
       });
 
-      const netStake = stakeTokens.sub(unstakeTokens);
+      const currentStake = await ps.stakerContractStake(staker1, cover.contractAddress);
+      const pendingUnstake = await ps.stakerContractPendingUnstakeTotal(staker1, cover.contractAddress);
+      const netStake = currentStake.sub(pendingUnstake);
       const expectedRewardAmount = netStake.mul(rewardRate).div(rewardRateScale);
       const rewardTokenBalancePostClaim = await mockTokenA.balanceOf(staker1);
       const rewardGain = rewardTokenBalancePostClaim.sub(rewardTokenBalancePreClaim);
