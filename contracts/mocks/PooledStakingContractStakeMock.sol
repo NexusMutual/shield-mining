@@ -17,7 +17,7 @@
 
 pragma solidity ^0.6.10;
 
-contract PooledStakingMock {
+contract PooledStakingContractStakeMock {
 
   mapping(address => mapping(address => uint)) stakerContractStakes;
   mapping(address => mapping(address => uint)) stakerContractPendingUnstakeTotals;

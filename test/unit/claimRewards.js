@@ -58,7 +58,8 @@ describe('claimRewards', function () {
     const staker1Stake = ether('4');
     const staker1PendingUnstake = ether('3');
     const staker1NetStake = staker1Stake.sub(staker1PendingUnstake);
-    await pooledStaking.setStakerContractStake(staker1, firstContract, staker1NetStake);
+    await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
+    await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
 
     const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
@@ -103,8 +104,8 @@ describe('claimRewards', function () {
 
     const staker1Stake = ether('4');
     const staker1PendingUnstake = ether('3');
-    const staker1NetStake = staker1Stake.sub(staker1PendingUnstake);
-    await pooledStaking.setStakerContractStake(staker1, firstContract, staker1NetStake);
+    await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
+    await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
 
     await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
@@ -138,7 +139,8 @@ describe('claimRewards', function () {
       const staker1Stake = ether('4');
       const staker1PendingUnstake = ether('3');
       const staker1NetStake = staker1Stake.sub(staker1PendingUnstake);
-      await pooledStaking.setStakerContractStake(staker1, firstContract, staker1NetStake);
+      await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
+      await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
 
       const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
         from: staker1,
@@ -166,7 +168,7 @@ describe('claimRewards', function () {
     }
   });
 
-  it.only('should send reward funds to claiming staker for multiple sponsors with varying contracts, reward rates and tokens',
+  it('should send reward funds to claiming staker for multiple sponsors with varying contracts, reward rates and tokens',
     async function () {
       const { incentives, mockTokenA, mockTokenB, mockTokenC, pooledStaking } = this;
       const sponsors = [sponsor1, sponsor2, sponsor3, sponsor4, sponsor5];
@@ -241,7 +243,10 @@ describe('claimRewards', function () {
       }
 
       for (const stakedContract in stakes) {
-        await pooledStaking.setStakerContractStake(staker1, stakedContract, stakes[stakedContract].netStake);
+        await pooledStaking.setStakerContractStake(staker1, stakedContract, stakes[stakedContract].stakerStake);
+        await pooledStaking.setStakerContractPendingUnstakeTotal(
+          staker1, stakedContract, stakes[stakedContract].stakerPendingUnstake,
+        );
       }
 
       const stakedContracts = testRewardPools.map(pool => pool.contract);

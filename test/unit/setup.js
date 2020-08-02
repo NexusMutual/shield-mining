@@ -1,7 +1,7 @@
 const { contract } = require('@openzeppelin/test-environment');
 const { time } = require('@openzeppelin/test-helpers');
 const MasterMock = contract.fromArtifact('MasterMock');
-const PooledStakingMock = contract.fromArtifact('PooledStakingMock');
+const PooledStakingMock = contract.fromArtifact('PooledStakingContractStakeMock');
 const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncentives');
 const MintableERC20 = contract.fromArtifact('MintableERC20');
 const { hex } = require('../utils');
