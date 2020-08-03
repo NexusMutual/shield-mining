@@ -1,6 +1,5 @@
 const { accounts, defaultSender, web3 } = require('@openzeppelin/test-environment');
-const { expectRevert, ether, time, expectEvent } = require('@openzeppelin/test-helpers');
-const { exec } = require('child_process');
+const { expectRevert, ether, time } = require('@openzeppelin/test-helpers');
 const { assert } = require('chai');
 require('chai').should();
 
