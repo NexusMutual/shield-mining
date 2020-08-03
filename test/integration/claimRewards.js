@@ -121,7 +121,7 @@ describe('claimRewards', function () {
       );
     });
 
-    it('allows staker to claim rewards proportionate to the stake', async function () {
+    it('reverts when staker attempts to claim rewards before beginning of the rounds', async function () {
       const { incentives, mockTokenA, ps } = this;
       await expectRevert(incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
         from: staker1,
@@ -129,7 +129,7 @@ describe('claimRewards', function () {
       'Rounds haven\'t started yet');
     });
 
-    it('allows staker to claim rewards proportionate to the stake while no unstakes pending', async function () {
+    it('allows staker to claim rewards proportionate to the stake with no unstakes pending', async function () {
       const { incentives, mockTokenA, ps } = this;
 
       await time.increase(10);
