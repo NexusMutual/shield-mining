@@ -185,9 +185,9 @@ describe('claimRewards', function () {
       );
       assert.equal(availableRewards.toString(), '0');
       await expectRevert(incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
-          from: staker1,
-        }),
-        'Already claimed this reward for this round');
+        from: staker1,
+      }),
+      'Already claimed this reward for this round');
     });
   });
 });
