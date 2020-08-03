@@ -209,7 +209,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
 
     uint currentRound = getCurrentRound();
     RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
-    uint lastRoundClaimed = pool.lastRoundClaimed[msg.sender];
+    uint lastRoundClaimed = pool.lastRoundClaimed[staker];
     if (lastRoundClaimed >= currentRound) {
       return 0;
     }

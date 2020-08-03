@@ -122,7 +122,7 @@ describe('claimRewards', function () {
     });
 
     it('reverts when staker attempts to claim rewards before beginning of the rounds', async function () {
-      const { incentives, mockTokenA, ps } = this;
+      const { incentives, mockTokenA } = this;
       await expectRevert(incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
         from: staker1,
       }),
@@ -133,12 +133,18 @@ describe('claimRewards', function () {
       const { incentives, mockTokenA, ps } = this;
 
       await time.increase(10);
-      await incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
-        from: staker1,
-      });
 
       const currentStake = await ps.stakerContractStake(staker1, cover.contractAddress);
       const expectedRewardAmount = currentStake.mul(rewardRate).div(rewardRateScale);
+
+      const availableRewards = await incentives.getAvailableStakerRewards(
+        staker1, cover.contractAddress, sponsor1, mockTokenA.address,
+      );
+      assert.equal(availableRewards.toString(), expectedRewardAmount.toString());
+
+      await incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
+        from: staker1,
+      });
       const rewardTokenBalance = await mockTokenA.balanceOf(staker1);
       assert.equal(rewardTokenBalance.toString(), expectedRewardAmount.toString());
     });
@@ -149,22 +155,39 @@ describe('claimRewards', function () {
       await ps.requestUnstake([cover.contractAddress, secondCoveredAddress], [unstakeTokens, unstakeTokens], 0, {
         from: staker1,
       });
+      const currentStake = await ps.stakerContractStake(staker1, cover.contractAddress);
+      const pendingUnstake = await ps.stakerContractPendingUnstakeTotal(staker1, cover.contractAddress);
+      const netStake = currentStake.sub(pendingUnstake);
+      const expectedRewardAmount = netStake.mul(rewardRate).div(rewardRateScale);
 
       const rounDuration = await incentives.roundDuration();
       await time.increase(rounDuration);
+
+      const availableRewards = await incentives.getAvailableStakerRewards(
+        staker1, cover.contractAddress, sponsor1, mockTokenA.address,
+      );
+      assert.equal(availableRewards.toString(), expectedRewardAmount.toString());
 
       const rewardTokenBalancePreClaim = await mockTokenA.balanceOf(staker1);
       await incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
         from: staker1,
       });
 
-      const currentStake = await ps.stakerContractStake(staker1, cover.contractAddress);
-      const pendingUnstake = await ps.stakerContractPendingUnstakeTotal(staker1, cover.contractAddress);
-      const netStake = currentStake.sub(pendingUnstake);
-      const expectedRewardAmount = netStake.mul(rewardRate).div(rewardRateScale);
       const rewardTokenBalancePostClaim = await mockTokenA.balanceOf(staker1);
       const rewardGain = rewardTokenBalancePostClaim.sub(rewardTokenBalancePreClaim);
       assert.equal(rewardGain.toString(), expectedRewardAmount.toString());
+    });
+
+    it('reverts when staker attempts to claim a second time within the same round', async function () {
+      const { incentives, mockTokenA } = this;
+      const availableRewards = await incentives.getAvailableStakerRewards(
+        staker1, cover.contractAddress, sponsor1, mockTokenA.address,
+      );
+      assert.equal(availableRewards.toString(), '0');
+      await expectRevert(incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
+          from: staker1,
+        }),
+        'Already claimed this reward for this round');
     });
   });
 });

@@ -61,13 +61,15 @@ describe('claimRewards', function () {
     await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
     await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
 
+    const expectedRewardClaimedAmount = staker1NetStake.mul(rewardRate).div(rewardRateScale);
+    const availableRewards = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
+    assert.equal(availableRewards.toString(), expectedRewardClaimedAmount.toString());
     const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
     });
     const tx = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
     });
-    const expectedRewardClaimedAmount = staker1NetStake.mul(rewardRate).div(rewardRateScale);
     await expectEvent(tx, 'Claimed', {
       stakedContract: firstContract,
       sponsor,
