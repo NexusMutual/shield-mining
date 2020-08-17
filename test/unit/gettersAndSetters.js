@@ -60,6 +60,39 @@ describe('getters and setters', function () {
     const { rate } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(rate.toString(), rewardRateValue.toString());
   });
+
+  it('sets reward rate for the first round and for the second round 2 times and for the third round', async function () {
+    const { incentives, mockTokenA } = this;
+    const initialRewardRate = new BN('10').pow(new BN('18')).muln(12);
+    const nextRateFor2ndRound = new BN('10').pow(new BN('18')).muln(13);
+    const nextRate2For2ndRound = new BN('10').pow(new BN('18')).muln(14);
+    const nextRateFor3rdRound = new BN('10').pow(new BN('18')).muln(15);
+    await incentives.setRewardRate(firstContract, mockTokenA.address, initialRewardRate.toString(), { from: sponsor1 });
+    const { rate } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(rate.toString(), initialRewardRate.toString());
+
+    await incentives.setRewardRate(firstContract, mockTokenA.address, nextRateFor2ndRound.toString(), { from: sponsor1 });
+    let pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(pool.rate.toString(), initialRewardRate.toString());
+    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
+    assert.equal(pool.nextRateStartRound.toString(), '2');
+
+    await incentives.setRewardRate(firstContract, mockTokenA.address, nextRate2For2ndRound.toString(), { from: sponsor1 });
+    pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(pool.rate.toString(), initialRewardRate.toString());
+    assert.equal(pool.nextRate.toString(), nextRate2For2ndRound.toString());
+    assert.equal(pool.nextRateStartRound.toString(), '2');
+
+
+    const timeUntilNextRound = (await incentives.roundDuration()).addn(10);
+    await time.increase(timeUntilNextRound);
+
+    await incentives.setRewardRate(firstContract, mockTokenA.address, nextRateFor3rdRound.toString(), { from: sponsor1 });
+    pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(pool.rate.toString(), nextRate2For2ndRound.toString());
+    assert.equal(pool.nextRate.toString(), nextRateFor3rdRound.toString());
+    assert.equal(pool.nextRateStartRound.toString(), '3');
+  });
 });
 
 describe('getters and setters before roundsStartTime', function () {

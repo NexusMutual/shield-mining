@@ -49,8 +49,11 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   struct RewardPool {
-    uint rate;
     uint amount;
+    uint rate;
+    uint nextRate;
+    uint nextRateStartRound;
+    bool active;
     mapping(address => uint) lastRoundClaimed;
   }
 
@@ -87,7 +90,20 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param rate Rate between the NXM stake and the reward amount. (Scaled by 1e18)
   */
   function setRewardRate(address stakedContract, address tokenAddress, uint rate) public {
-    rewardPools[stakedContract][msg.sender][tokenAddress].rate = rate;
+
+    RewardPool storage pool = rewardPools[stakedContract][msg.sender][tokenAddress];
+    if (!pool.active) {
+      pool.active = true;
+      pool.rate = rate;
+      return;
+    }
+
+    uint currentRound = getCurrentRound();
+    if (pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound) {
+      pool.rate = pool.nextRate;
+    }
+    pool.nextRate = rate;
+    pool.nextRateStartRound = currentRound + 1;
   }
 
   /**
@@ -157,6 +173,12 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     uint lastRoundClaimed = pool.lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
+    if (pool.nextRateStartRound != 0 && pool.nextRateStartRound >= currentRound) {
+      pool.rate = pool.nextRate;
+      pool.nextRateStartRound = 0;
+      pool.nextRate = 0;
+    }
+
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(msg.sender, stakedContract);
     uint pendingUnstake = pooledStaking.stakerContractPendingUnstakeTotal(msg.sender, stakedContract);
@@ -184,10 +206,11 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   */
   function withdrawRewards(address stakedContract, address tokenAddress, uint amount) external nonReentrant {
     IERC20 erc20 = IERC20(tokenAddress);
-    uint currentAmount = rewardPools[stakedContract][msg.sender][tokenAddress].amount;
-    require(currentAmount >= amount, "Not enough tokens to withdraw");
+    RewardPool storage pool = rewardPools[stakedContract][msg.sender][tokenAddress];
+    require(pool.amount >= amount, "Not enough tokens to withdraw");
+    require(pool.rate == 0, "Reward rate is not 0");
 
-    rewardPools[stakedContract][msg.sender][tokenAddress].amount = currentAmount.sub(amount);
+    pool.amount = pool.amount.sub(amount);
     erc20.safeTransfer(msg.sender, amount);
     emit Withdrawn(stakedContract, msg.sender, tokenAddress, amount);
   }
@@ -213,11 +236,13 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     if (lastRoundClaimed >= currentRound) {
       return 0;
     }
+    uint rate = pool.nextRateStartRound != 0 && pool.nextRateStartRound >= currentRound ? pool.nextRate : pool.rate;
+
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
     uint pendingUnstake = pooledStaking.stakerContractPendingUnstakeTotal(staker, stakedContract);
     uint netStake = stake >= pendingUnstake ? stake.sub(pendingUnstake) : 0;
-    rewardAmount = netStake.mul(pool.rate).div(rewardRateScale);
+    rewardAmount = netStake.mul(rate).div(rewardRateScale);
     uint rewardsAvailable = pool.amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
@@ -236,9 +261,9 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address stakedContract,
     address sponsor,
     address tokenAddress
-  ) external view returns (uint amount, uint rate) {
+  ) external view returns (uint amount, uint rate, uint nextRate, uint nextRateStartRound, bool active) {
     RewardPool memory pool = rewardPools[stakedContract][sponsor][tokenAddress];
-    return (pool.amount, pool.rate);
+    return (pool.amount, pool.rate, pool.nextRate, pool.nextRateStartRound, pool.active);
   }
 
   /**

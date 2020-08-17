@@ -101,6 +101,30 @@ describe('withdrawRewards', function () {
     );
   });
 
+  it('should revert when reward rate is different from 0', async function () {
+    const { incentives, mockTokenA } = this;
+
+    const minted = ether('100');
+    await mockTokenA.mint(sponsor1, minted);
+    const totalRewards = ether('1');
+    await mockTokenA.approve(incentives.address, totalRewards, {
+      from: sponsor1,
+    });
+    await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
+      from: sponsor1,
+    });
+    await incentives.setRewardRate(firstContract, mockTokenA.address, ether('1'), {
+      from: sponsor1,
+    });
+
+    const rewardsToWithdraw = totalRewards;
+    await expectRevert(
+      incentives.withdrawRewards(firstContract, mockTokenA.address, rewardsToWithdraw, { from: sponsor1 }),
+      'Reward rate is not 0',
+    );
+  });
+
+
   it('should revert when the token address does not exist', async function () {
     const { incentives, mockTokenA } = this;
     const minted = ether('100');
