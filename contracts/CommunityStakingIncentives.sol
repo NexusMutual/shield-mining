@@ -99,7 +99,8 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     }
 
     uint currentRound = getCurrentRound();
-    if (pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound) {
+    uint currentRate = _getCurrentRate(pool, currentRound);
+    if (pool.rate != currentRate) {
       pool.rate = pool.nextRate;
     }
     pool.nextRate = rate;
@@ -236,8 +237,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     if (lastRoundClaimed >= currentRound) {
       return 0;
     }
-    uint rate = pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound ? pool.nextRate : pool.rate;
-
+    uint rate = _getCurrentRate(pool, currentRound);
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
     uint pendingUnstake = pooledStaking.stakerContractPendingUnstakeTotal(staker, stakedContract);
@@ -255,15 +255,19 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param sponsor Sponsor providing the reward funds.
   * @param tokenAddress address of the ERC20 token of the reward funds.
   * @return amount total available token amount of the RewardPool
-  * @return rate rate to NXM of the RewardPool
+  * @return currentRate current rate to NXM of the RewardPool
+  * @return rate rate to NXM of the RewardPool. Potentially not up to date. Use currentRate.
+  * @return nextRate rate for the next round of the RewardPool. if nextRateStartRound is 0 this value is not relevant.
+  * @return nextRateStartRound start round number for the nextRate value. If 0, the rate will not be changing on the next round.
+  * @return active true if the rate has ever been set for this pool. false otherwise.
   */
   function getRewardPool(
     address stakedContract,
     address sponsor,
     address tokenAddress
-  ) external view returns (uint amount, uint rate, uint nextRate, uint nextRateStartRound, bool active) {
-    RewardPool memory pool = rewardPools[stakedContract][sponsor][tokenAddress];
-    return (pool.amount, pool.rate, pool.nextRate, pool.nextRateStartRound, pool.active);
+  ) external view returns (uint amount, uint currentRate, uint rate, uint nextRate, uint nextRateStartRound, bool active) {
+    RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
+    return (pool.amount, pool.rate, _getCurrentRate(pool, getCurrentRound()), pool.nextRate, pool.nextRateStartRound, pool.active);
   }
 
   /**
@@ -287,5 +291,9 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address staker
   ) external view returns (uint) {
     return rewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[staker];
+  }
+
+  function _getCurrentRate(RewardPool storage pool, uint currentRound) internal view returns (uint) {
+    return pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound ? pool.nextRate : pool.rate;
   }
 }
