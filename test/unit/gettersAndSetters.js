@@ -83,7 +83,6 @@ describe('getters and setters', function () {
     assert.equal(pool.nextRate.toString(), nextRate2For2ndRound.toString());
     assert.equal(pool.nextRateStartRound.toString(), '2');
 
-
     const timeUntilNextRound = (await incentives.roundDuration()).addn(10);
     await time.increase(timeUntilNextRound);
 

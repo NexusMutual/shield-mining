@@ -4,5 +4,5 @@ Object.defineProperty(global, '_bitcore', { get(){ return undefined }, set(){} }
 
 const getValue = require('../../nexusmutual-contracts/test/utils/getMCRPerThreshold.js').getValue;
 module.exports = {
-  getValue
+  getValue,
 };

@@ -124,7 +124,6 @@ describe('withdrawRewards', function () {
     );
   });
 
-
   it('should revert when the token address does not exist', async function () {
     const { incentives, mockTokenA } = this;
     const minted = ether('100');

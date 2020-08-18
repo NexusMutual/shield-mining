@@ -22,7 +22,7 @@ function getUniqueRewardTuples (events) {
   });
 }
 
-describe.only('claimRewards', function () {
+describe('claimRewards', function () {
   this.timeout(5000);
 
   const [
@@ -80,7 +80,6 @@ describe.only('claimRewards', function () {
     });
     assert.equal(tokensClaimed.length, 1);
     assert.equal(tokensClaimed[0].toString(), expectedRewardClaimedAmount.toString());
-
     const postRewardBalance = await mockTokenA.balanceOf(staker1);
     assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
   });
@@ -119,6 +118,82 @@ describe.only('claimRewards', function () {
       incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], { from: staker1 }),
       'Already claimed this reward for this round',
     );
+  });
+
+  it('should send reward funds to claiming staker for 2 rounds at different rates and update pool rate for 2nd round', async function () {
+    const { incentives, mockTokenA, pooledStaking } = this;
+
+    const sponsor = sponsor1;
+
+    await mockTokenA.mint(sponsor, ether('100'));
+
+    const totalRewards = ether('10');
+    await mockTokenA.approve(incentives.address, totalRewards, {
+      from: sponsor,
+    });
+    await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
+      from: sponsor,
+    });
+    const rewardRate = rewardRateScale;
+    await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRate, {
+      from: sponsor,
+    });
+
+    const staker1Stake = ether('4');
+    const staker1PendingUnstake = ether('3');
+    const staker1NetStake = staker1Stake.sub(staker1PendingUnstake);
+    await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
+    await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
+
+    const expectedRewardClaimedAmount = staker1NetStake.mul(rewardRate).div(rewardRateScale);
+    const availableRewards = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
+    assert.equal(availableRewards.toString(), expectedRewardClaimedAmount.toString());
+    const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
+      from: staker1,
+    });
+    const tx = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
+      from: staker1,
+    });
+
+    assert.equal(tokensClaimed.length, 1);
+    assert.equal(tokensClaimed[0].toString(), expectedRewardClaimedAmount.toString());
+
+    const postRewardBalance = await mockTokenA.balanceOf(staker1);
+    assert.equal(postRewardBalance.toString(), expectedRewardClaimedAmount.toString());
+
+    const nextRewardRate = rewardRateScale.muln(2);
+    await incentives.setRewardRate(firstContract, mockTokenA.address, nextRewardRate, {
+      from: sponsor,
+    });
+
+    const roundDuration = (await incentives.roundDuration()).addn(10);
+    await time.increase(roundDuration);
+
+    const expectedRewardClaimedAmountRound2 = staker1NetStake.mul(nextRewardRate).div(rewardRateScale);
+    const availableRewardsRound2 = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
+    assert.equal(availableRewardsRound2.toString(), expectedRewardClaimedAmountRound2.toString());
+
+    const txRound2 = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
+      from: staker1,
+    });
+    await expectEvent(txRound2, 'Claimed', {
+      stakedContract: firstContract,
+      sponsor,
+      tokenAddress: mockTokenA.address,
+      amount: expectedRewardClaimedAmountRound2.toString(),
+      receiver: staker1,
+      roundNumber: '2',
+    });
+
+    let pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
+    assert.equal(pool.rate.toString(), nextRewardRate.toString());
+    assert.equal(pool.nextRate.toString(), '0');
+    assert.equal(pool.nextRateStartRound.toString(), '0');
+
+    const availableRewardsRound2PostClaim = await incentives.getAvailableStakerRewards(
+      staker1, firstContract, sponsor, mockTokenA.address,
+    );
+    assert.equal(availableRewardsRound2PostClaim.toString(), '0');
   });
 
   it('should send reward funds to claiming staker and emit Claimed event for multiple rounds', async function () {
