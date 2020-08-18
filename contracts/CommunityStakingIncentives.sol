@@ -53,6 +53,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     uint rate;
     uint nextRate;
     uint nextRateStartRound;
+    // true if the rate was previously set for this pool. if !active allows the sponsor to set it on the current round (one-off).
     bool active;
     mapping(address => uint) lastRoundClaimed;
   }
