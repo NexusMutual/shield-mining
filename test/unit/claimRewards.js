@@ -185,7 +185,7 @@ describe('claimRewards', function () {
       roundNumber: '2',
     });
 
-    let pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
+    const pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
     assert.equal(pool.rate.toString(), nextRewardRate.toString());
     assert.equal(pool.nextRate.toString(), '0');
     assert.equal(pool.nextRateStartRound.toString(), '0');
