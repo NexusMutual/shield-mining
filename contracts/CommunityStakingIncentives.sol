@@ -173,7 +173,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     uint lastRoundClaimed = pool.lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
-    if (pool.nextRateStartRound != 0 && pool.nextRateStartRound >= currentRound) {
+    if (pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound) {
       pool.rate = pool.nextRate;
       pool.nextRateStartRound = 0;
       pool.nextRate = 0;
@@ -236,7 +236,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     if (lastRoundClaimed >= currentRound) {
       return 0;
     }
-    uint rate = pool.nextRateStartRound != 0 && pool.nextRateStartRound >= currentRound ? pool.nextRate : pool.rate;
+    uint rate = pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound ? pool.nextRate : pool.rate;
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);

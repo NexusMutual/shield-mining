@@ -196,7 +196,7 @@ describe('claimRewards', function () {
     assert.equal(availableRewardsRound2PostClaim.toString(), '0');
   });
 
-  it.only('should send reward funds to claiming staker and emit Claimed event for multiple rounds', async function () {
+  it('should send reward funds to claiming staker and emit Claimed event for multiple rounds', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsor = sponsor1;
@@ -216,10 +216,16 @@ describe('claimRewards', function () {
       await incentives.depositRewards(firstContract, mockTokenA.address, totalRewards, {
         from: sponsor,
       });
+
+      const expectedRewardRate = rewardRate;
       rewardRate = rewardRate.muln(2);
       await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRate, {
         from: sponsor,
       });
+      let pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
+      assert.equal(pool.rate.toString(), expectedRewardRate.toString());
+      assert.equal(pool.nextRate.toString(), rewardRate.toString());
+      assert.equal(pool.nextRateStartRound.toString(), (i + 2).toString());
 
       const staker1Stake = ether('4');
       const staker1PendingUnstake = ether('3');
@@ -227,17 +233,20 @@ describe('claimRewards', function () {
       await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
       await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
 
-      const pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
-      const expectedRewardRate = i === 0 ? rewardRate : pool.nextRate;
       const expectedRewardClaimedAmount = staker1NetStake.mul(expectedRewardRate).div(rewardRateScale);
       const availableRewards = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
-      assert.equal(availableRewards.toString(), expectedRewardClaimedAmount.toString());
+      assert.equal(availableRewards.toString(), expectedRewardClaimedAmount.toString(), `Failed on round ${i + 1}`);
       const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
         from: staker1,
       });
       const tx = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
         from: staker1,
       });
+
+      pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
+      assert.equal(pool.rate.toString(), expectedRewardRate);
+      assert.equal(pool.nextRate.toString(), rewardRate.toString());
+      assert.equal(pool.nextRateStartRound.toString(), (i + 2).toString());
 
       const expectedRoundNumber = (i + 1).toString();
       await expectEvent(tx, 'Claimed', {
