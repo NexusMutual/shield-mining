@@ -73,7 +73,29 @@ describe('getters and setters', function () {
     assert.equal(rate.toString(), rewardRateValue.toString());
   });
 
-  it('sets reward rate for the first round and for the second round 2 times and for the third round', async function () {
+  it('sets reward for the first round and then for the second round 2 times to the same value (idempotent)', async function () {
+    const { incentives, mockTokenA } = this;
+    const initialRewardRate = new BN('10').pow(new BN('18')).muln(12);
+    const nextRateFor2ndRound = new BN('10').pow(new BN('18')).muln(13);
+    await incentives.setRewardRate(firstContract, mockTokenA.address, initialRewardRate.toString(), { from: sponsor1 });
+    const { rate } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(rate.toString(), initialRewardRate.toString());
+
+    await incentives.setRewardRate(firstContract, mockTokenA.address, nextRateFor2ndRound.toString(), { from: sponsor1 });
+    let pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(pool.rate.toString(), initialRewardRate.toString());
+    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
+    assert.equal(pool.nextRateStartRound.toString(), '2');
+    assert.equal(pool.active, true);
+
+    await incentives.setRewardRate(firstContract, mockTokenA.address, nextRateFor2ndRound.toString(), { from: sponsor1 });
+    pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(pool.rate.toString(), initialRewardRate.toString());
+    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
+    assert.equal(pool.nextRateStartRound.toString(), '2');
+  });
+
+  it('sets reward rate for the first round, for the second round 2 times, and for the third round', async function () {
     const { incentives, mockTokenA } = this;
     const initialRewardRate = new BN('10').pow(new BN('18')).muln(12);
     const nextRateFor2ndRound = new BN('10').pow(new BN('18')).muln(13);

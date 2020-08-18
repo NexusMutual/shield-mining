@@ -32,6 +32,7 @@ describe('claimRewards', function () {
     sponsor4,
     sponsor5,
     staker1,
+    staker2,
   ] = accounts;
 
   beforeEach(setup);
@@ -120,7 +121,8 @@ describe('claimRewards', function () {
     );
   });
 
-  it('should send reward funds to claiming staker for 2 rounds at different rates and update pool rate for 2nd round', async function () {
+  it('should send reward funds to claiming staker for 2 rounds at different rates and update pool rate for 2nd round for current' +
+    'and next claim within the round from the pool', async function () {
     const { incentives, mockTokenA, pooledStaking } = this;
 
     const sponsor = sponsor1;
@@ -141,9 +143,16 @@ describe('claimRewards', function () {
 
     const staker1Stake = ether('4');
     const staker1PendingUnstake = ether('3');
+    const staker2Stake = ether('5');
+    const staker2PendingUnstake = ether('3');
     const staker1NetStake = staker1Stake.sub(staker1PendingUnstake);
     await pooledStaking.setStakerContractStake(staker1, firstContract, staker1Stake);
     await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
+
+    // staker 2
+    const staker2NetStake = staker2Stake.sub(staker2PendingUnstake);
+    await pooledStaking.setStakerContractStake(staker2, firstContract, staker2Stake);
+    await pooledStaking.setStakerContractPendingUnstakeTotal(staker2, firstContract, staker2PendingUnstake);
 
     const expectedRewardClaimedAmount = staker1NetStake.mul(rewardRate).div(rewardRateScale);
     const availableRewards = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
@@ -185,7 +194,7 @@ describe('claimRewards', function () {
       roundNumber: '2',
     });
 
-    const pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
+    let pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
     assert.equal(pool.rate.toString(), nextRewardRate.toString());
     assert.equal(pool.nextRate.toString(), '0');
     assert.equal(pool.nextRateStartRound.toString(), '0');
@@ -194,6 +203,26 @@ describe('claimRewards', function () {
       staker1, firstContract, sponsor, mockTokenA.address,
     );
     assert.equal(availableRewardsRound2PostClaim.toString(), '0');
+
+    const txRound2Staker2 = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
+      from: staker2,
+    });
+
+    const expectedRewardClaimedAmountRound2Staker2 = staker2NetStake.mul(nextRewardRate).div(rewardRateScale);
+    await expectEvent(txRound2Staker2, 'Claimed', {
+      stakedContract: firstContract,
+      sponsor,
+      tokenAddress: mockTokenA.address,
+      amount: expectedRewardClaimedAmountRound2Staker2.toString(),
+      receiver: staker2,
+      roundNumber: '2',
+    });
+
+    // pool rates stay the same for this subsequent claim.
+    pool = await incentives.getRewardPool(firstContract, sponsor, mockTokenA.address);
+    assert.equal(pool.rate.toString(), nextRewardRate.toString());
+    assert.equal(pool.nextRate.toString(), '0');
+    assert.equal(pool.nextRateStartRound.toString(), '0');
   });
 
   it('should send reward funds to claiming staker and emit Claimed event for multiple rounds', async function () {
