@@ -100,7 +100,8 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     }
 
     uint currentRound = getCurrentRound();
-    uint currentRate = _getCurrentRate(pool, currentRound);
+    uint currentRate;
+    (currentRate, , ) = _getRates(pool, currentRound);
     if (pool.rate != currentRate) {
       pool.rate = pool.nextRate;
     }
@@ -238,7 +239,8 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     if (lastRoundClaimed >= currentRound) {
       return 0;
     }
-    uint rate = _getCurrentRate(pool, currentRound);
+    uint rate;
+    (rate, , ) = _getRates(pool, currentRound);
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(staker, stakedContract);
     uint pendingUnstake = pooledStaking.stakerContractPendingUnstakeTotal(staker, stakedContract);
@@ -268,7 +270,9 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address tokenAddress
   ) external view returns (uint amount, uint currentRate, uint rate, uint nextRate, uint nextRateStartRound, bool active) {
     RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
-    return (pool.amount, pool.rate, _getCurrentRate(pool, getCurrentRound()), pool.nextRate, pool.nextRateStartRound, pool.active);
+    uint currentRate;
+    (currentRate, , ) = _getRates(pool, getCurrentRound());
+    return (pool.amount, pool.rate, currentRate, pool.nextRate, pool.nextRateStartRound, pool.active);
   }
 
   /**
@@ -294,7 +298,11 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     return rewardPools[stakedContract][sponsor][tokenAddress].lastRoundClaimed[staker];
   }
 
-  function _getCurrentRate(RewardPool storage pool, uint currentRound) internal view returns (uint) {
-    return pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound ? pool.nextRate : pool.rate;
+  function _getRates(RewardPool storage pool, uint currentRound) internal view returns (uint rate, bool hasNextRate, uint nextRate) {
+    bool needsUpdate = pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound;
+    if (needsUpdate) {
+      return (pool.nextRate, false, 0);
+    }
+    return (pool.rate, pool.nextRateStartRound != 0, pool.nextRate);
   }
 }
