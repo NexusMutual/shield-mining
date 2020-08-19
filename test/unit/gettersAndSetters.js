@@ -60,8 +60,8 @@ describe('getters and setters', function () {
     await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRateValue.toString(), { from: sponsor1 });
     const pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(pool.rate.toString(), rewardRateValue.toString());
-    assert.equal(pool.nextRate.toString(), '0');
     assert.equal(pool.nextRateStartRound.toString(), '0');
+    assert.equal(pool.nextRate.toString(), '0');
     assert.equal(pool.active, true);
   });
 
@@ -69,8 +69,11 @@ describe('getters and setters', function () {
     const { incentives, mockTokenA } = this;
     const rewardRateValue = new BN('0');
     await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRateValue.toString(), { from: sponsor1 });
-    const { rate } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
-    assert.equal(rate.toString(), rewardRateValue.toString());
+    const pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    assert.equal(pool.rate.toString(), '0');
+    assert.equal(pool.nextRateStartRound.toString(), '0');
+    assert.equal(pool.nextRate.toString(), '0');
+    assert.equal(pool.active, true);
   });
 
   it('sets reward for the first round and then for the second round 2 times to the same value (idempotent)', async function () {
@@ -84,15 +87,16 @@ describe('getters and setters', function () {
     await incentives.setRewardRate(firstContract, mockTokenA.address, nextRateFor2ndRound.toString(), { from: sponsor1 });
     let pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(pool.rate.toString(), initialRewardRate.toString());
-    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
     assert.equal(pool.nextRateStartRound.toString(), '2');
+    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
     assert.equal(pool.active, true);
 
     await incentives.setRewardRate(firstContract, mockTokenA.address, nextRateFor2ndRound.toString(), { from: sponsor1 });
     pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(pool.rate.toString(), initialRewardRate.toString());
-    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
     assert.equal(pool.nextRateStartRound.toString(), '2');
+    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
+    assert.equal(pool.active, true);
   });
 
   it('sets reward rate for the first round, for the second round 2 times, and for the third round', async function () {
@@ -108,15 +112,16 @@ describe('getters and setters', function () {
     await incentives.setRewardRate(firstContract, mockTokenA.address, nextRateFor2ndRound.toString(), { from: sponsor1 });
     let pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(pool.rate.toString(), initialRewardRate.toString());
-    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
     assert.equal(pool.nextRateStartRound.toString(), '2');
+    assert.equal(pool.nextRate.toString(), nextRateFor2ndRound.toString());
     assert.equal(pool.active, true);
 
     await incentives.setRewardRate(firstContract, mockTokenA.address, nextRate2For2ndRound.toString(), { from: sponsor1 });
     pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
     assert.equal(pool.rate.toString(), initialRewardRate.toString());
-    assert.equal(pool.nextRate.toString(), nextRate2For2ndRound.toString());
     assert.equal(pool.nextRateStartRound.toString(), '2');
+    assert.equal(pool.nextRate.toString(), nextRate2For2ndRound.toString());
+    assert.equal(pool.active, true);
 
     const timeUntilNextRound = (await incentives.roundDuration()).addn(10);
     await time.increase(timeUntilNextRound);
