@@ -50,9 +50,10 @@ contract CommunityStakingIncentives is ReentrancyGuard {
 
   struct RewardPool {
     uint amount;
+    // _rate _nextRate and nextRateStartRound  may not be up to date. use _getRates to get the up to date values.
     uint _rate;
     uint _nextRate;
-    uint nextRateStartRound;
+    uint _nextRateStartRound;
     // true if the rate was previously set for this pool. if !active allows the sponsor to set it on the current round (one-off).
     bool active;
     mapping(address => uint) lastRoundClaimed;
@@ -106,7 +107,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
       pool._rate = pool._nextRate;
     }
     pool._nextRate = rate;
-    pool.nextRateStartRound = currentRound + 1;
+    pool._nextRateStartRound = currentRound + 1;
   }
 
   /**
@@ -176,9 +177,9 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     uint lastRoundClaimed = pool.lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
-    if (pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound) {
+    if (pool._nextRateStartRound != 0 && pool._nextRateStartRound <= currentRound) {
       pool._rate = pool._nextRate;
-      pool.nextRateStartRound = 0;
+      pool._nextRateStartRound = 0;
       pool._nextRate = 0;
     }
 
@@ -298,10 +299,10 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   function _getRates(RewardPool storage pool, uint currentRound) internal view returns (uint rate, uint nextRateStartRound, uint nextRate) {
-    bool needsUpdate = pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound;
+    bool needsUpdate = pool._nextRateStartRound != 0 && pool._nextRateStartRound <= currentRound;
     if (needsUpdate) {
       return (pool._nextRate, 0, 0);
     }
-    return (pool._rate, pool.nextRateStartRound, pool._nextRate);
+    return (pool._rate, pool._nextRateStartRound, pool._nextRate);
   }
 }
