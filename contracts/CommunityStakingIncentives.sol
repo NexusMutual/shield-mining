@@ -50,9 +50,9 @@ contract CommunityStakingIncentives is ReentrancyGuard {
 
   struct RewardPool {
     uint amount;
-    uint rate;
-    uint nextRate;
-    uint nextRateStartRound;
+    uint _rate;
+    uint _nextRate;
+    uint _nextRateStartRound;
     // true if the rate was previously set for this pool. if !active allows the sponsor to set it on the current round (one-off).
     bool active;
     mapping(address => uint) lastRoundClaimed;
@@ -95,18 +95,18 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     RewardPool storage pool = rewardPools[stakedContract][msg.sender][tokenAddress];
     if (!pool.active) {
       pool.active = true;
-      pool.rate = rate;
+      pool._rate = rate;
       return;
     }
 
     uint currentRound = getCurrentRound();
     uint currentRate;
     (currentRate, , ) = _getRates(pool, currentRound);
-    if (pool.rate != currentRate) {
-      pool.rate = pool.nextRate;
+    if (pool._rate != currentRate) {
+      pool._rate = pool._nextRate;
     }
-    pool.nextRate = rate;
-    pool.nextRateStartRound = currentRound + 1;
+    pool._nextRate = rate;
+    pool._nextRateStartRound = currentRound + 1;
   }
 
   /**
@@ -176,17 +176,17 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     uint lastRoundClaimed = pool.lastRoundClaimed[msg.sender];
     require(currentRound > lastRoundClaimed, "Already claimed this reward for this round");
 
-    if (pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound) {
-      pool.rate = pool.nextRate;
-      pool.nextRateStartRound = 0;
-      pool.nextRate = 0;
+    if (pool._nextRateStartRound != 0 && pool._nextRateStartRound <= currentRound) {
+      pool._rate = pool._nextRate;
+      pool._nextRateStartRound = 0;
+      pool._nextRate = 0;
     }
 
     IPooledStaking pooledStaking = IPooledStaking(master.getLatestAddress("PS"));
     uint stake = pooledStaking.stakerContractStake(msg.sender, stakedContract);
     uint pendingUnstake = pooledStaking.stakerContractPendingUnstakeTotal(msg.sender, stakedContract);
     uint netStake = stake >= pendingUnstake ? stake.sub(pendingUnstake) : 0;
-    rewardAmount = netStake.mul(pool.rate).div(rewardRateScale);
+    rewardAmount = netStake.mul(pool._rate).div(rewardRateScale);
     uint rewardsAvailable = pool.amount;
     if (rewardAmount > rewardsAvailable) {
       rewardAmount = rewardsAvailable;
@@ -211,7 +211,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     IERC20 erc20 = IERC20(tokenAddress);
     RewardPool storage pool = rewardPools[stakedContract][msg.sender][tokenAddress];
     require(pool.amount >= amount, "Not enough tokens to withdraw");
-    require(pool.rate == 0, "Reward rate is not 0");
+    require(pool._rate == 0, "Reward rate is not 0");
 
     pool.amount = pool.amount.sub(amount);
     erc20.safeTransfer(msg.sender, amount);
@@ -272,7 +272,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
     uint currentRate;
     (currentRate, , ) = _getRates(pool, getCurrentRound());
-    return (pool.amount, pool.rate, currentRate, pool.nextRate, pool.nextRateStartRound, pool.active);
+    return (pool.amount, pool._rate, currentRate, pool._nextRate, pool._nextRateStartRound, pool.active);
   }
 
   /**
@@ -299,10 +299,10 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   function _getRates(RewardPool storage pool, uint currentRound) internal view returns (uint rate, bool hasNextRate, uint nextRate) {
-    bool needsUpdate = pool.nextRateStartRound != 0 && pool.nextRateStartRound <= currentRound;
+    bool needsUpdate = pool._nextRateStartRound != 0 && pool._nextRateStartRound <= currentRound;
     if (needsUpdate) {
-      return (pool.nextRate, false, 0);
+      return (pool._nextRate, false, 0);
     }
-    return (pool.rate, pool.nextRateStartRound != 0, pool.nextRate);
+    return (pool._rate, pool._nextRateStartRound != 0, pool._nextRate);
   }
 }
