@@ -63,7 +63,9 @@ describe('claimRewards', function () {
     await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
 
     const expectedRewardClaimedAmount = staker1NetStake.mul(rewardRate).div(rewardRateScale);
-    const availableRewards = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
+    const [availableRewards] = await incentives.getAvailableStakerRewards(
+      staker1, [firstContract], [sponsor], [mockTokenA.address],
+    );
     assert.equal(availableRewards.toString(), expectedRewardClaimedAmount.toString());
     const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
@@ -113,7 +115,9 @@ describe('claimRewards', function () {
       from: staker1,
     });
 
-    const availableRewards = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
+    const [availableRewards] = await incentives.getAvailableStakerRewards(
+      staker1, [firstContract], [sponsor], [mockTokenA.address],
+    );
     assert.equal(availableRewards.toString(), '0');
     await expectRevert(
       incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], { from: staker1 }),
@@ -155,7 +159,9 @@ describe('claimRewards', function () {
     await pooledStaking.setStakerContractPendingUnstakeTotal(staker2, firstContract, staker2PendingUnstake);
 
     const expectedRewardClaimedAmount = staker1NetStake.mul(rewardRate).div(rewardRateScale);
-    const availableRewards = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
+    const [availableRewards] = await incentives.getAvailableStakerRewards(
+      staker1, [firstContract], [sponsor], [mockTokenA.address],
+    );
     assert.equal(availableRewards.toString(), expectedRewardClaimedAmount.toString());
     const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
       from: staker1,
@@ -189,7 +195,9 @@ describe('claimRewards', function () {
     assert.equal(pool.nextRateStartRound.toString(), '0');
 
     const expectedRewardClaimedAmountRound2 = staker1NetStake.mul(rewardRate2ndRound).div(rewardRateScale);
-    const availableRewardsRound2 = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
+    const [availableRewardsRound2] = await incentives.getAvailableStakerRewards(
+      staker1, [firstContract], [sponsor], [mockTokenA.address],
+    );
     assert.equal(availableRewardsRound2.toString(), expectedRewardClaimedAmountRound2.toString());
 
     const txRound2 = await incentives.claimRewards([firstContract], [sponsor], [mockTokenA.address], {
@@ -209,8 +217,8 @@ describe('claimRewards', function () {
     assert.equal(pool.nextRate.toString(), '0');
     assert.equal(pool.nextRateStartRound.toString(), '0');
 
-    const availableRewardsRound2PostClaim = await incentives.getAvailableStakerRewards(
-      staker1, firstContract, sponsor, mockTokenA.address,
+    const [availableRewardsRound2PostClaim] = await incentives.getAvailableStakerRewards(
+      staker1, [firstContract], [sponsor], [mockTokenA.address],
     );
     assert.equal(availableRewardsRound2PostClaim.toString(), '0');
 
@@ -273,7 +281,9 @@ describe('claimRewards', function () {
       await pooledStaking.setStakerContractPendingUnstakeTotal(staker1, firstContract, staker1PendingUnstake);
 
       const expectedRewardClaimedAmount = staker1NetStake.mul(expectedRewardRate).div(rewardRateScale);
-      const availableRewards = await incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, mockTokenA.address);
+      const [availableRewards] = await incentives.getAvailableStakerRewards(
+        staker1, [firstContract], [sponsor], [mockTokenA.address],
+      );
       assert.equal(availableRewards.toString(), expectedRewardClaimedAmount.toString(), `Failed on round ${i + 1}`);
       const tokensClaimed = await incentives.claimRewards.call([firstContract], [sponsor], [mockTokenA.address], {
         from: staker1,
@@ -503,17 +513,27 @@ describe('detecting all available sponsors from Deposited and claiming all avail
       },
     });
     const tuples = getUniqueRewardTuples(pastEvents.map(e => e.args));
-    for (const tuple of tuples) {
-      const availableReward = await incentives.getAvailableStakerRewards(staker, tuple.stakedContract, tuple.sponsor, tuple.tokenAddress);
+
+    const stakedContractsArray = tuples.map(t => t.stakedContract);
+    const sponsorsArray = tuples.map(t => t.sponsor);
+    const tokenAddressesArray = tuples.map(t => t.tokenAddress);
+    const availableRewards = await incentives.getAvailableStakerRewards(
+      staker, stakedContractsArray, sponsorsArray, tokenAddressesArray,
+    );
+
+    assert.equal(availableRewards.length, tuples.length);
+    for (let i = 0; i < tuples.length; i++) {
+      const tuple = tuples[i];
+      const availableReward = availableRewards[i];
       const rate = rewardRates[tuple.sponsor];
       const expectedReward = stakerNetStake.mul(rate).div(rewardRateScale).toString();
       assert(availableReward.toString(), expectedReward);
     }
 
     await incentives.claimRewards(
-      tuples.map(t => t.stakedContract),
-      tuples.map(t => t.sponsor),
-      tuples.map(t => t.tokenAddress), {
+      stakedContractsArray,
+      sponsorsArray,
+      tokenAddressesArray, {
         from: staker,
       });
     const expectedRewardClaimedAmount =

@@ -138,7 +138,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   /**
-  * @dev Calls claimReward for each separate (risk, sponsor, token) tuple specified.
+  * @dev Calls claimReward for each separate (stakedContract, sponsor, token) tuple specified.
   * @param stakedContracts Contracts the staker has a stake on.
   * @param sponsors Sponsors to claim rewards from.
   * @param tokenAddresses Addresses of the ERC20 token of the reward funds.
@@ -203,7 +203,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   /**
-  * @dev Withdraw reward funds as a Sponsor for a particular risk.
+  * @dev Withdraw reward funds as a Sponsor for a particular staked contract.
   * @param stakedContract Contract the staker has a stake on.
   * @param tokenAddress Address of the ERC20 token of the reward funds.
   * @param amount Amount of reward funds to be withdrawn.
@@ -227,12 +227,12 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @param tokenAddress address of the ERC20 token of the reward funds.
   * @return rewardAmount amount of reward tokens available for this particular staker.
   */
-  function getAvailableStakerRewards(
+  function getAvailableStakerReward(
     address staker,
     address stakedContract,
     address sponsor,
     address tokenAddress
-  ) external view returns (uint rewardAmount) {
+  ) public view returns (uint rewardAmount) {
 
     uint currentRound = getCurrentRound();
     RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
@@ -254,7 +254,29 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   }
 
   /**
-  @dev Fetch the amount and rate of RewardPool.
+  * @dev Calls claimReward for each separate (stakedContract, sponsor, token) tuple specified.
+  * @param stakedContracts Contracts the staker has a stake on.
+  * @param sponsors Sponsors to claim rewards from.
+  * @param tokenAddresses Addresses of the ERC20 token of the reward funds.
+  * @return tokensRewarded Tokens rewarded by each sponsor.
+  */
+  function getAvailableStakerRewards(
+    address staker,
+    address[] calldata stakedContracts,
+    address[] calldata sponsors,
+    address[] calldata tokenAddresses
+  ) external view returns (uint[] memory tokensRewarded) {
+    require(stakedContracts.length == sponsors.length, "stakedContracts.length != sponsors.length");
+    require(stakedContracts.length == tokenAddresses.length, "stakedContracts.length != tokenAddresses.length");
+
+    tokensRewarded = new uint[](stakedContracts.length);
+    for (uint i = 0; i < stakedContracts.length; i++) {
+      tokensRewarded[i] = getAvailableStakerReward(staker, stakedContracts[i], sponsors[i], tokenAddresses[i]);
+    }
+  }
+
+  /**
+  @dev Fetch RewardPool information
   * @param stakedContract contract a staker has a stake on.
   * @param sponsor Sponsor providing the reward funds.
   * @param tokenAddress address of the ERC20 token of the reward funds.
@@ -268,11 +290,51 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     address stakedContract,
     address sponsor,
     address tokenAddress
-  ) external view returns (uint amount, uint rate, uint nextRateStartRound, uint nextRate, bool active) {
+  ) public view returns (uint amount, uint rate, uint nextRateStartRound, uint nextRate, bool active) {
     RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
     (rate, nextRateStartRound, nextRate) = _getRates(pool, getCurrentRound());
     amount = pool.amount;
     active = pool.active;
+  }
+
+
+  /**
+  @dev Fetch information for multiple RewardPools
+  * @param stakedContracts contract a staker has a stake on.
+  * @param sponsors Sponsor providing the reward funds.
+  * @param tokenAddresses address of the ERC20 token of the reward funds.
+  * @return amount total available token amount of the RewardPool
+  * @return rate rate to NXM of the RewardPool.
+  * @return nextRateStartRound round number for which the next rate applies. if 0, no nextRate is set.
+  * @return nextRate rate for the next round of the RewardPool. if nextRateStartRound is 0 this value is not relevant.
+  * @return active true if the rate has ever been set for this pool. false otherwise.
+  */
+  function getRewardPools(
+    address[] calldata stakedContracts,
+    address[] calldata sponsors,
+    address[] calldata tokenAddresses
+  ) external view returns (
+    uint[] memory amount,
+    uint[] memory rate,
+    uint[] memory nextRateStartRound,
+    uint[] memory nextRate,
+    bool[] memory active
+  ) {
+    require(stakedContracts.length == sponsors.length, "stakedContracts.length != sponsors.length");
+    require(stakedContracts.length == tokenAddresses.length, "stakedContracts.length != tokenAddresses.length");
+
+    amount = new uint[](stakedContracts.length);
+    rate = new uint[](stakedContracts.length);
+    nextRateStartRound = new uint[](stakedContracts.length);
+    nextRate = new uint[](stakedContracts.length);
+    active = new bool[](stakedContracts.length);
+
+    for (uint i = 0; i < stakedContracts.length; i++) {
+      RewardPool storage pool = rewardPools[stakedContracts[i]][sponsors[i]][tokenAddresses[i]];
+      (rate[i], nextRateStartRound[i], nextRate[i]) = _getRates(pool, getCurrentRound());
+      amount[i] = pool.amount;
+      active[i] = pool.active;
+    }
   }
 
   /**

@@ -163,7 +163,7 @@ describe('getters and setters before roundsStartTime', function () {
   it('reverts when getting available staker rewards', async function () {
     const { incentives } = this;
     await expectRevert(
-      incentives.getAvailableStakerRewards(staker1, firstContract, sponsor, tokenAddress),
+      incentives.getAvailableStakerRewards(staker1, [firstContract], [sponsor], [tokenAddress]),
       `Rounds haven't started yet`,
     );
   });
