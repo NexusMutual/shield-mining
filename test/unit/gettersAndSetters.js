@@ -76,6 +76,22 @@ describe('getters and setters', function () {
     assert.equal(pool.active, true);
   });
 
+  // comment out `await time.increase` line in setup.js for this to fail
+  it.skip('sets reward rate twice before first round', async function () {
+    const { incentives, mockTokenA } = this;
+    const erroneousRewardRateValue = new BN('10').pow(new BN('18')).muln(100);
+    const rewardRateValue = new BN('10').pow(new BN('18')).muln(10);
+
+    await incentives.setRewardRate(firstContract, mockTokenA.address, erroneousRewardRateValue, { from: sponsor1 });
+    await incentives.setRewardRate(firstContract, mockTokenA.address, rewardRateValue, { from: sponsor1 });
+    const pool = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+
+    assert.equal(pool.rate.toString(), rewardRateValue.toString());
+    assert.equal(pool.nextRateStartRound.toString(), '0');
+    assert.equal(pool.nextRate.toString(), '0');
+    assert.equal(pool.active, true);
+  });
+
   it('sets reward for the first round and then for the second round 2 times to the same value (idempotent)', async function () {
     const { incentives, mockTokenA } = this;
     const initialRewardRate = new BN('10').pow(new BN('18')).muln(12);
