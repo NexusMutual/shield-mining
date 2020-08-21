@@ -50,7 +50,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
 
   struct RewardPool {
     uint amount;
-    // _rate _nextRate and nextRateStartRound  may not be up to date. use _getRates to get the up to date values.
+    // rate nextRate and nextRateStartRound  may not be up to date. use _getRates to get the up to date values.
     uint rate;
     uint nextRate;
     uint nextRateStartRound;

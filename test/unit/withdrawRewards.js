@@ -39,7 +39,7 @@ describe('withdrawRewards', function () {
     });
 
     const expectedRewardsLeft = totalRewards.sub(rewardsToWithdraw);
-    const { amount: storedAmount } = await incentives.getRewardPool(firstContract, sponsor1, mockTokenA.address);
+    const { amount: storedAmount } = await incentives.getRewardPools(firstContract, sponsor1, mockTokenA.address);
     assert.equal(storedAmount.toString(), expectedRewardsLeft.toString());
 
     const postWithdrawalIncentivesBalance = await mockTokenA.balanceOf(incentives.address);
