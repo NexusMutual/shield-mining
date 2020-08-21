@@ -1,4 +1,4 @@
-const { time, expectRevert } = require('@openzeppelin/test-helpers');
+const { time, expectRevert, ether } = require('@openzeppelin/test-helpers');
 const { accounts, web3, contract } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const { setup } = require('./setup');
@@ -6,12 +6,14 @@ const CommunityStakingIncentives = contract.fromArtifact('CommunityStakingIncent
 const BN = web3.utils.BN;
 
 const firstContract = '0x0000000000000000000000000000000000000001';
+const secondContract = '0x0000000000000000000000000000000000000002';
 
 describe('getters and setters', function () {
 
   this.timeout(5000);
   const [
     sponsor1,
+    sponsor2
   ] = accounts;
 
   beforeEach(setup);
@@ -61,6 +63,49 @@ describe('getters and setters', function () {
     assert.equal(pools.rate[0].toString(), rewardRateValue.toString());
     assert.equal(pools.nextRateStartRound[0].toString(), '0');
     assert.equal(pools.nextRate[0].toString(), '0');
+  });
+
+  it.only('gets multiple RewardPools at the same time', async function () {
+    const { incentives, mockTokenA, mockTokenB } = this;
+    const firstRewardRate = new BN('12').pow(new BN('18'));
+    const secondRewardRate = new BN('11').pow(new BN('18'));
+
+    await mockTokenA.mint(sponsor1, ether('100'));
+    const firstRewards = ether('1');
+
+    await mockTokenA.approve(incentives.address, firstRewards, {
+      from: sponsor1,
+    });
+    await incentives.depositRewards(firstContract, mockTokenA.address, firstRewards, {
+      from: sponsor1,
+    });
+    await incentives.setRewardRate(firstContract, mockTokenA.address, firstRewardRate, { from: sponsor1 });
+
+    await mockTokenB.mint(sponsor2, ether('100'));
+    const secondRewards = ether('2');
+    await mockTokenB.approve(incentives.address, secondRewards, {
+      from: sponsor2,
+    });
+    await incentives.depositRewards(secondContract, mockTokenB.address, secondRewards, {
+      from: sponsor2,
+    });
+    await incentives.setRewardRate(secondContract, mockTokenB.address, secondRewardRate, { from: sponsor2 });
+
+    const pools = await incentives.getRewardPools(
+      [firstContract, secondContract],
+      [sponsor1, sponsor2],
+      [mockTokenA.address, mockTokenB.address]
+    );
+    assert.equal(pools.rate[0].toString(), firstRewardRate.toString());
+    assert.equal(pools.nextRateStartRound[0].toString(), '0');
+    assert.equal(pools.nextRate[0].toString(), '0');
+    assert.equal(pools.nextRate[0].toString(), '0');
+    assert.equal(pools.amount[0].toString(), firstRewards.toString());
+
+    assert.equal(pools.rate[1].toString(), secondRewardRate.toString());
+    assert.equal(pools.nextRateStartRound[1].toString(), '0');
+    assert.equal(pools.nextRate[1].toString(), '0');
+    assert.equal(pools.amount[1].toString(), secondRewards.toString());
   });
 
   it('sets reward rate to 0', async function () {
