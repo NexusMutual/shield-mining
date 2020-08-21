@@ -170,7 +170,7 @@ describe('getters and setters before roundsStartTime', function () {
 
   // comment out `await time.increase` line in setup.js for this to fail
   it.skip('sets reward rate twice before first round', async function () {
-    const { incentives, mockTokenA } = this;
+    const { incentives } = this;
     const erroneousRewardRateValue = new BN('10').pow(new BN('18')).muln(100);
     const rewardRateValue = new BN('10').pow(new BN('18')).muln(10);
 
