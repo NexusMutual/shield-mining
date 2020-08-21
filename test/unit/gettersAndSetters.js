@@ -13,7 +13,7 @@ describe('getters and setters', function () {
   this.timeout(5000);
   const [
     sponsor1,
-    sponsor2
+    sponsor2,
   ] = accounts;
 
   beforeEach(setup);
@@ -65,7 +65,7 @@ describe('getters and setters', function () {
     assert.equal(pools.nextRate[0].toString(), '0');
   });
 
-  it.only('gets multiple RewardPools at the same time', async function () {
+  it('gets multiple RewardPools at the same time', async function () {
     const { incentives, mockTokenA, mockTokenB } = this;
     const firstRewardRate = new BN('12').pow(new BN('18'));
     const secondRewardRate = new BN('11').pow(new BN('18'));
@@ -94,7 +94,7 @@ describe('getters and setters', function () {
     const pools = await incentives.getRewardPools(
       [firstContract, secondContract],
       [sponsor1, sponsor2],
-      [mockTokenA.address, mockTokenB.address]
+      [mockTokenA.address, mockTokenB.address],
     );
     assert.equal(pools.rate[0].toString(), firstRewardRate.toString());
     assert.equal(pools.nextRateStartRound[0].toString(), '0');
@@ -232,7 +232,7 @@ describe('getters and setters before roundsStartTime', function () {
     );
   });
 
-  it.only('reverts when setting reward rate', async function () {
+  it('reverts when setting reward rate', async function () {
     const { incentives } = this;
     const rewardRateValue = new BN('10').pow(new BN('18')).muln(10);
 
