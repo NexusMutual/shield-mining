@@ -94,20 +94,24 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   function setRewardRate(address stakedContract, address tokenAddress, uint rate) public {
 
     RewardPool storage pool = rewardPools[stakedContract][msg.sender][tokenAddress];
-    if (!pool.active) {
-      pool.active = true;
-      pool.rate = rate;
-      return;
-    }
 
     uint currentRound = getCurrentRound();
     uint currentRate;
     (currentRate, , ) = _getRates(pool, currentRound);
-    if (pool.rate != currentRate) {
-      pool.rate = pool.nextRate;
+    if (currentRate == 0) {
+      // set the rate for the current round
+      pool.rate = rate;
+      pool.nextRate = 0;
+      pool.nextRateStartRound = 0;
+      pool.active = true;
+    } else {
+      // set the rate for the next round
+      if (pool.rate != currentRate) {
+        pool.rate = pool.nextRate;
+      }
+      pool.nextRate = rate;
+      pool.nextRateStartRound = currentRound + 1;
     }
-    pool.nextRate = rate;
-    pool.nextRateStartRound = currentRound + 1;
   }
 
   /**
