@@ -51,7 +51,6 @@ describe('getters and setters', function () {
     assert.equal(pools.rate[0].toString(), '0');
     assert.equal(pools.nextRate[0].toString(), '0');
     assert.equal(pools.nextRateStartRound[0].toString(), '0');
-    assert.equal(pools.active[0], false);
   });
 
   it('sets and gets reward rate', async function () {
@@ -62,7 +61,6 @@ describe('getters and setters', function () {
     assert.equal(pools.rate[0].toString(), rewardRateValue.toString());
     assert.equal(pools.nextRateStartRound[0].toString(), '0');
     assert.equal(pools.nextRate[0].toString(), '0');
-    assert.equal(pools.active[0], true);
   });
 
   it('sets reward rate to 0', async function () {
@@ -72,7 +70,6 @@ describe('getters and setters', function () {
     assert.equal(pools.rate[0].toString(), '0');
     assert.equal(pools.nextRateStartRound[0].toString(), '0');
     assert.equal(pools.nextRate[0].toString(), '0');
-    assert.equal(pools.active[0], true);
   });
 
   it('sets reward rate to a non-zero value for starters, to 0 for the next round and to non-zero during the second round',
@@ -85,14 +82,12 @@ describe('getters and setters', function () {
       assert.equal(pools.rate[0].toString(), firstRewardRate.toString());
       assert.equal(pools.nextRateStartRound[0].toString(), '0');
       assert.equal(pools.nextRate[0].toString(), '0');
-      assert.equal(pools.active[0], true);
 
       await incentives.setRewardRate(firstContract, mockTokenA.address, '0', { from: sponsor1 });
       pools = await incentives.getRewardPools([firstContract], [sponsor1], [mockTokenA.address]);
       assert.equal(pools.rate[0].toString(), firstRewardRate.toString());
       assert.equal(pools.nextRateStartRound[0].toString(), '2');
       assert.equal(pools.nextRate[0].toString(), '0');
-      assert.equal(pools.active[0], true);
 
       const timeUntilNextRound = (await incentives.roundDuration()).addn(10);
       await time.increase(timeUntilNextRound);
@@ -102,7 +97,6 @@ describe('getters and setters', function () {
       assert.equal(pools.rate[0].toString(), secondRewardRate.toString());
       assert.equal(pools.nextRateStartRound[0].toString(), '0');
       assert.equal(pools.nextRate[0].toString(), '0');
-      assert.equal(pools.active[0], true);
     });
 
   it('sets reward for the first round and then for the second round 2 times to the same value (idempotent)', async function () {
@@ -118,14 +112,12 @@ describe('getters and setters', function () {
     assert.equal(pools.rate[0].toString(), initialRewardRate.toString());
     assert.equal(pools.nextRateStartRound[0].toString(), '2');
     assert.equal(pools.nextRate[0].toString(), nextRateFor2ndRound.toString());
-    assert.equal(pools.active[0], true);
 
     await incentives.setRewardRate(firstContract, mockTokenA.address, nextRateFor2ndRound.toString(), { from: sponsor1 });
     pools = await incentives.getRewardPools([firstContract], [sponsor1], [mockTokenA.address]);
     assert.equal(pools.rate[0].toString(), initialRewardRate.toString());
     assert.equal(pools.nextRateStartRound[0].toString(), '2');
     assert.equal(pools.nextRate[0].toString(), nextRateFor2ndRound.toString());
-    assert.equal(pools.active[0], true);
   });
 
   it('sets reward rate for the first round, for the second round 2 times, and for the third round', async function () {
@@ -143,14 +135,12 @@ describe('getters and setters', function () {
     assert.equal(pools.rate[0].toString(), initialRewardRate.toString());
     assert.equal(pools.nextRateStartRound[0].toString(), '2');
     assert.equal(pools.nextRate[0].toString(), nextRateFor2ndRound.toString());
-    assert.equal(pools.active[0], true);
 
     await incentives.setRewardRate(firstContract, mockTokenA.address, nextRate2For2ndRound.toString(), { from: sponsor1 });
     pools = await incentives.getRewardPools([firstContract], [sponsor1], [mockTokenA.address]);
     assert.equal(pools.rate[0].toString(), initialRewardRate.toString());
     assert.equal(pools.nextRateStartRound[0].toString(), '2');
     assert.equal(pools.nextRate[0].toString(), nextRate2For2ndRound.toString());
-    assert.equal(pools.active[0], true);
 
     const timeUntilNextRound = (await incentives.roundDuration()).addn(10);
     await time.increase(timeUntilNextRound);

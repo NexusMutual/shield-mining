@@ -54,8 +54,6 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     uint rate;
     uint nextRate;
     uint nextRateStartRound;
-    // true if the rate was previously set for this pool. if !active allows the sponsor to set it on the current round (one-off).
-    bool active;
     mapping(address => uint) lastRoundClaimed;
   }
 
@@ -103,7 +101,6 @@ contract CommunityStakingIncentives is ReentrancyGuard {
       pool.rate = rate;
       pool.nextRate = 0;
       pool.nextRateStartRound = 0;
-      pool.active = true;
     } else {
       // set the rate for the next round
       if (pool.rate != currentRate) {
@@ -288,17 +285,15 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @return rate rate to NXM of the RewardPool.
   * @return nextRateStartRound round number for which the next rate applies. if 0, no nextRate is set.
   * @return nextRate rate for the next round of the RewardPool. if nextRateStartRound is 0 this value is not relevant.
-  * @return active true if the rate has ever been set for this pool. false otherwise.
   */
   function getRewardPool(
     address stakedContract,
     address sponsor,
     address tokenAddress
-  ) public view returns (uint amount, uint rate, uint nextRateStartRound, uint nextRate, bool active) {
+  ) public view returns (uint amount, uint rate, uint nextRateStartRound, uint nextRate) {
     RewardPool storage pool = rewardPools[stakedContract][sponsor][tokenAddress];
     (rate, nextRateStartRound, nextRate) = _getRates(pool, getCurrentRound());
     amount = pool.amount;
-    active = pool.active;
   }
 
 
@@ -311,7 +306,6 @@ contract CommunityStakingIncentives is ReentrancyGuard {
   * @return rate rate to NXM of the RewardPool.
   * @return nextRateStartRound round number for which the next rate applies. if 0, no nextRate is set.
   * @return nextRate rate for the next round of the RewardPool. if nextRateStartRound is 0 this value is not relevant.
-  * @return active true if the rate has ever been set for this pool. false otherwise.
   */
   function getRewardPools(
     address[] calldata stakedContracts,
@@ -321,8 +315,7 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     uint[] memory amount,
     uint[] memory rate,
     uint[] memory nextRateStartRound,
-    uint[] memory nextRate,
-    bool[] memory active
+    uint[] memory nextRate
   ) {
     require(stakedContracts.length == sponsors.length, "stakedContracts.length != sponsors.length");
     require(stakedContracts.length == tokenAddresses.length, "stakedContracts.length != tokenAddresses.length");
@@ -331,13 +324,11 @@ contract CommunityStakingIncentives is ReentrancyGuard {
     rate = new uint[](stakedContracts.length);
     nextRateStartRound = new uint[](stakedContracts.length);
     nextRate = new uint[](stakedContracts.length);
-    active = new bool[](stakedContracts.length);
 
     for (uint i = 0; i < stakedContracts.length; i++) {
       RewardPool storage pool = rewardPools[stakedContracts[i]][sponsors[i]][tokenAddresses[i]];
       (rate[i], nextRateStartRound[i], nextRate[i]) = _getRates(pool, getCurrentRound());
       amount[i] = pool.amount;
-      active[i] = pool.active;
     }
   }
 
