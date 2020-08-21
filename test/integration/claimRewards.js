@@ -120,14 +120,6 @@ describe('claimRewards', function () {
       );
     });
 
-    it('reverts when staker attempts to claim rewards before beginning of the rounds', async function () {
-      const { incentives, mockTokenA } = this;
-      await expectRevert(incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {
-        from: staker1,
-      }),
-      'Rounds haven\'t started yet');
-    });
-
     it('allows staker to claim rewards proportionate to the stake with no unstakes pending', async function () {
       const { incentives, mockTokenA, ps } = this;
 
@@ -137,7 +129,7 @@ describe('claimRewards', function () {
       const expectedRewardAmount = currentStake.mul(rewardRate).div(rewardRateScale);
 
       const availableRewards = await incentives.getAvailableStakerRewards(
-        staker1, cover.contractAddress, sponsor1, mockTokenA.address,
+        staker1, [cover.contractAddress], [sponsor1], [mockTokenA.address],
       );
       assert.equal(availableRewards.toString(), expectedRewardAmount.toString());
 
@@ -163,7 +155,7 @@ describe('claimRewards', function () {
       await time.increase(rounDuration);
 
       const availableRewards = await incentives.getAvailableStakerRewards(
-        staker1, cover.contractAddress, sponsor1, mockTokenA.address,
+        staker1, [cover.contractAddress], [sponsor1], [mockTokenA.address],
       );
       assert.equal(availableRewards.toString(), expectedRewardAmount.toString());
 
@@ -180,7 +172,7 @@ describe('claimRewards', function () {
     it('reverts when staker attempts to claim a second time within the same round', async function () {
       const { incentives, mockTokenA } = this;
       const availableRewards = await incentives.getAvailableStakerRewards(
-        staker1, cover.contractAddress, sponsor1, mockTokenA.address,
+        staker1, [cover.contractAddress], [sponsor1], [mockTokenA.address],
       );
       assert.equal(availableRewards.toString(), '0');
       await expectRevert(incentives.claimRewards([cover.contractAddress], [sponsor1], [mockTokenA.address], {

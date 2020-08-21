@@ -182,6 +182,8 @@ async function setup () {
   const incentives = await CommunityStakingIncentives.new(roundDuration, roundsStartTime, master.address);
   const mockTokenA = await MintableERC20.new('MockTokenA', 'MTA');
 
+  await time.increase(roundsStartTimeSecondsUntilStart + 10);
+
   Object.assign(this, {
     master,
     ...external,
