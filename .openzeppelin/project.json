@@ -1,6 +1,8 @@
 {
   "manifestVersion": "2.2",
-  "contracts": {},
+  "contracts": {
+    "CommunityStakingIncentives": "CommunityStakingIncentives"
+  },
   "dependencies": {},
   "name": "staking-incentives",
   "version": "1.0.0",
